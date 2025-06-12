@@ -1,0 +1,58 @@
+﻿@page "/register"
+@attribute [AllowAnonymous]
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<MudPaper Elevation="4" Class="mx-auto mt-12 p-6" Style="max-width:400px;">
+    <MudText Typo="Typo.h5" Class="mb-4">Регистрация</MudText>
+
+    <MudForm @ref="_form" OnValidSubmit="OnValidSubmit">
+        <MudTextField @bind-Value="_model.UserName"
+                      Label="Имя пользователя"
+                      Required="true"
+                      For="@(() => _model.UserName)" />
+        <MudTextField @bind-Value="_model.Email"
+                      Label="Email"
+                      Required="true"
+                      For="@(() => _model.Email)" />
+        <MudTextField @bind-Value="_model.Password"
+                      Label="Пароль"
+                      InputType="InputType.Password"
+                      Required="true"
+                      For="@(() => _model.Password)" />
+
+        <MudButton Type="Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Disabled="_loading">
+            @if (_loading)
+            {
+                <MudProgressCircular Size="Size.Medium" Class="mr-2" Indeterminate="true" />
+            }
+            Зарегистрироваться
+        </MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private MudForm _form = null!;
+    private bool _loading;
+    private readonly RegisterDto _model = new();
+
+    private async Task OnValidSubmit()
+    {
+        _loading = true;
+        try
+        {
+            await AuthService.RegisterAsync(_model);
+            Snackbar.Add("Регистрация успешна, войдите в систему", Severity.Success);
+            Nav.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ошибка регистрации: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}
