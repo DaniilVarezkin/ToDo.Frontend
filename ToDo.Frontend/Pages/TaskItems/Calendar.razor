@@ -1,0 +1,130 @@
+﻿@page "/tasks/calendar"
+@attribute [Authorize]
+
+@using ToDo.Shared.Dto.Common
+@using ToDo.Shared.Dto.TaskItems
+@using MudBlazor
+@inject ITaskItemsService TaskItemsService
+@inject NavigationManager Nav
+
+<MudPaper Class="pa-4">
+    <!-- Header навигации по месяцу -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="PrevMonth" />
+        <MudText Typo="Typo.h5">@_currentMonth.ToString("Y").ToUpperInvariant()</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="NextMonth" />
+    </MudStack>
+
+    @if (_cells?.Count == 42)
+    {
+        <!-- Календарь с фиксированным заголовком -->
+        <MudSimpleTable Dense="true" FixedHeader="true" Style="height:600px; overflow:auto; table-layout:fixed; width:100%;">
+            <thead>
+                <tr>
+                    @foreach (var d in _weekDays)
+                    {
+                        <th style="width:14.285%;">
+                            <MudText Align="Align.Center" Typo="Typo.subtitle2">
+                                @d.Substring(0, 3)
+                            </MudText>
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (int row = 0; row < 6; row++)
+                {
+                    <tr>
+                        @for (int col = 0; col < 7; col++)
+                        {
+                            var cell = _cells[row * 7 + col];
+                            bool inMonth = cell.Date.Month == _currentMonth.Month;
+                            bool isToday = cell.Date.Date == DateTime.Today;
+                            <td class="calendar-cell @(inMonth ? "" : "out-month") @(isToday ? "today-cell" : "")" style="vertical-align:top; padding:4px; height:120px;">
+                                <div class="d-flex justify-space-between">
+                                    <MudText Typo="Typo.subtitle2">@cell.Date.Day</MudText>
+                                </div>
+                                <div style="overflow-y:auto; margin-top:4px;">
+                                    @foreach (var t in cell.Tasks)
+                                    {
+                                        <MudTooltip Text="@t.Title">
+                                            <MudChip T="string" Size="Size.Small"
+                                                     Class="mb-1 clickable"
+                                                     Style="max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                                                     OnClick='() => Nav.NavigateTo($"/tasks/form/{t.Id}")'
+                                                     Color="Color.Primary"
+                                                     Variant="Variant.Filled">
+                                                @GetTaskDisplayText(t)
+                                            </MudChip>
+                                        </MudTooltip>
+                                    }
+                                </div>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+    else
+    {
+        <MudText Typo="Typo.subtitle1">Loading calendar...</MudText>
+    }
+</MudPaper>
+
+@code {
+    private DateTime _currentMonth = DateTime.Today;
+    private List<CalendarDay>? _cells;
+    private readonly string[] _weekDays =
+        Enum.GetValues<DayOfWeek>()
+            .Skip(1).Concat(new[] { DayOfWeek.Sunday })
+            .Select(d => d.ToString()).ToArray();
+
+    protected override async Task OnInitializedAsync()
+        => await LoadMonth(_currentMonth);
+
+    private async Task LoadMonth(DateTime month)
+    {
+        _currentMonth = new DateTime(month.Year, month.Month, 1);
+
+        var start = _currentMonth.AddDays(-(((int)_currentMonth.DayOfWeek + 6) % 7));
+        var end = start.AddDays(42).AddTicks(-1);
+
+        var startOff = new DateTimeOffset(
+            DateTime.SpecifyKind(start, DateTimeKind.Utc), TimeSpan.Zero);
+        var endOff = new DateTimeOffset(
+            DateTime.SpecifyKind(end, DateTimeKind.Utc), TimeSpan.Zero);
+
+        var vm = await TaskItemsService.GetCalendarAsync(startOff, endOff);
+
+        // Строим 42 ячейки
+        _cells = Enumerable.Range(0, 42)
+            .Select(i =>
+            {
+                var dt = start.AddDays(i);
+                return vm.Days.FirstOrDefault(d => d.Date.Date == dt.Date)
+                    ?? new CalendarDay { Date = new DateTimeOffset(dt), Tasks = new List<TaskItemLookupDto>() };
+            })
+            .ToList();
+
+        StateHasChanged();
+    }
+
+    private Task PrevMonth() => LoadMonth(_currentMonth.AddMonths(-1));
+    private Task NextMonth() => LoadMonth(_currentMonth.AddMonths(1));
+
+    private string GetTaskDisplayText(TaskItemLookupDto t)
+    {
+        if (t.IsAllDay)
+            return "• " + Truncate(t.Title, 15);
+        var time = t.StartDate.LocalDateTime.ToString("HH:mm");
+        return time + " " + Truncate(t.Title, 15);
+    }
+
+    private string Truncate(string value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+            return value;
+        return value.Substring(0, maxLength - 1) + "…";
+    }
+}

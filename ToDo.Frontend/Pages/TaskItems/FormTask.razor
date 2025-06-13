@@ -28,6 +28,7 @@
             <!-- Весь день -->
             <MudSwitch T="bool"
                        @bind-Value="_viewModel.IsAllDay"
+                       Color="Color.Primary"
                        Label="На весь день" />
 
             <!-- Дата/время начала -->
@@ -37,23 +38,29 @@
                                Label="Дата начала"
                                Required="true"
                                RequiredError="Укажите дату начала" />
-                <MudTimePicker T="TimeSpan?"
-                               @bind-Time="_viewModel.StartTime"
-                               Label="Время начала"
-                               Required="true"
-                               RequiredError="Укажите время начала" />
+            @if(!_viewModel.IsAllDay)
+            {
+                    <MudTimePicker T="TimeSpan?"
+                                   @bind-Time="_viewModel.StartTime"
+                                   Label="Время начала"
+                                   Required="true"
+                                   RequiredError="Укажите время начала" />
+            }
             </MudStack>
 
-            <!-- Слайдер длительности -->
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                <MudText Typo="Typo.caption">Длительность (ч):</MudText>
+            @if (!_viewModel.IsAllDay)
+            {
+                <!-- Слайдер длительности -->
+                <MudStack Row="false" AlignItems="AlignItems.Start">
+                    <MudText Typo="Typo.caption">Длительность: @_viewModel.DurationLabel</MudText>
                 <MudSlider T="int"
-                           @bind-Value="_viewModel.DurationHours"
-                           Min="0" Max="8" Step="1"
-                           Marks="@_durationMarks"
-                           Class="flex-grow-1" />
-                <MudText Typo="Typo.subtitle2" Class="ml-2">@($"{_viewModel.DurationHours} ч")</MudText>
-            </MudStack>
+                           @bind-Value="_viewModel.DurationBlocks"
+                           Min="1" Max="16" Step="1" TickMarks="true"
+                           TickMarkLabels="_durationMarks"
+                           Class="flex-grow-1 ps-2" 
+                           Style="max-width: 500px; width: 100%;" />
+                </MudStack>
+            }
 
             <!-- Дата/время окончания -->
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
@@ -62,11 +69,15 @@
                                Label="Дата окончания"
                                Required="true"
                                RequiredError="Укажите дату окончания" />
+            @if(!_viewModel.IsAllDay)
+            {
                 <MudTimePicker T="TimeSpan?"
-                               @bind-Time="_viewModel.EndTime"
-                               Label="Время окончания"
-                               Required="true"
-                               RequiredError="Укажите время окончания" />
+                                @bind-Time="_viewModel.EndTime"
+                                Label="Время окончания"
+                                Required="true"
+                                RequiredError="Укажите время окончания" />
+            }
+
             </MudStack>
 
             <!-- Цвет, статус, приоритет -->
@@ -114,8 +125,10 @@
     private MudForm _form = null!;
     private TaskFormViewModel _viewModel = new();
 
-    private Dictionary<int, string> _durationMarks =
-        Enumerable.Range(0, 9).ToDictionary(i => i, i => i == 0 ? "0" : $"{i}ч");
+    private readonly string[] _durationMarks =
+        Enumerable.Range(0, 17)
+                  .Select(i => (i % 4 == 0) ? $"{(i * 15) / 60}ч" :  "")
+                  .ToArray();
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,7 +153,7 @@
                 StartTime = dto.StartDate.UtcDateTime.TimeOfDay,
                 EndDate = dto.EndDate.UtcDateTime.Date,
                 EndTime = dto.EndDate.UtcDateTime.TimeOfDay,
-                DurationHours = (int)(dto.EndDate - dto.StartDate).TotalHours,
+                DurationBlocks = (int)(dto.EndDate - dto.StartDate).TotalHours * 4,
                 Color = dto.Color,
                 Status = dto.Status,
                 Priority = dto.Priority,
@@ -153,19 +166,7 @@
             // Создание — дефолты
             _viewModel.StartDate = DateTime.Today;
             _viewModel.StartTime = TimeSpan.FromHours(9);
-            _viewModel.DurationHours = 1;
-            UpdateEndByDuration();
-        }
-    }
-
-    private void UpdateEndByDuration()
-    {
-        if (_viewModel.StartDate.HasValue && _viewModel.StartTime.HasValue)
-        {
-            var start = _viewModel.StartDate.Value.Date + _viewModel.StartTime.Value;
-            var end = start.AddHours(_viewModel.DurationHours);
-            _viewModel.EndDate = end.Date;
-            _viewModel.EndTime = end.TimeOfDay;
+            _viewModel.DurationBlocks = 1;
         }
     }
 
