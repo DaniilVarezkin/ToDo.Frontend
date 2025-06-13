@@ -1,0 +1,25 @@
+﻿@using ToDo.Shared.Dto.TaskItems
+
+
+<td class="calendar-cell @(InMonth ? "" : "out-month") @(IsToday ? "today-cell" : "")"
+    style="vertical-align:top; padding:4px; height:120px;">
+    <div class="d-flex justify-space-between">
+        <MudText Typo="Typo.subtitle2">@Date.Day</MudText>
+    </div>
+    <div style="overflow-y:auto; margin-top:4px;">
+        @foreach (var task in Tasks)
+        {
+            <TaskChipComponent TaskItem="task" />
+        }
+    </div>
+</td>
+
+@code {
+    [Parameter] public DateTimeOffset DateOffset { get; set; }
+    [Parameter] public IList<TaskItemLookupDto> Tasks { get; set; } = Array.Empty<TaskItemLookupDto>();
+    [Parameter] public DateTime CurrentMonth { get; set; }
+
+    private DateTime Date => DateOffset.DateTime;
+    private bool InMonth => Date.Month == CurrentMonth.Month;
+    private bool IsToday => Date.Date == DateTime.Today;
+}

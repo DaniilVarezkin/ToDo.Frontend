@@ -1,6 +1,7 @@
 ﻿@page "/tasks/calendar"
 @attribute [Authorize]
 
+@using ToDo.Frontend.Shared.Components
 @using ToDo.Shared.Dto.Common
 @using ToDo.Shared.Dto.TaskItems
 @using MudBlazor
@@ -8,7 +9,6 @@
 @inject NavigationManager Nav
 
 <MudPaper Class="pa-4">
-    <!-- Header навигации по месяцу -->
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
         <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="PrevMonth" />
         <MudText Typo="Typo.h5">@_currentMonth.ToString("Y").ToUpperInvariant()</MudText>
@@ -17,7 +17,6 @@
 
     @if (_cells?.Count == 42)
     {
-        <!-- Календарь с фиксированным заголовком -->
         <MudSimpleTable Dense="true" FixedHeader="true" Style="height:600px; overflow:auto; table-layout:fixed; width:100%;">
             <thead>
                 <tr>
@@ -38,28 +37,9 @@
                         @for (int col = 0; col < 7; col++)
                         {
                             var cell = _cells[row * 7 + col];
-                            bool inMonth = cell.Date.Month == _currentMonth.Month;
-                            bool isToday = cell.Date.Date == DateTime.Today;
-                            <td class="calendar-cell @(inMonth ? "" : "out-month") @(isToday ? "today-cell" : "")" style="vertical-align:top; padding:4px; height:120px;">
-                                <div class="d-flex justify-space-between">
-                                    <MudText Typo="Typo.subtitle2">@cell.Date.Day</MudText>
-                                </div>
-                                <div style="overflow-y:auto; margin-top:4px;">
-                                    @foreach (var t in cell.Tasks)
-                                    {
-                                        <MudTooltip Text="@t.Title">
-                                            <MudChip T="string" Size="Size.Small"
-                                                     Class="mb-1 clickable"
-                                                     Style="max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
-                                                     OnClick='() => Nav.NavigateTo($"/tasks/form/{t.Id}")'
-                                                     Color="Color.Primary"
-                                                     Variant="Variant.Filled">
-                                                @GetTaskDisplayText(t)
-                                            </MudChip>
-                                        </MudTooltip>
-                                    }
-                                </div>
-                            </td>
+                            <CalendarCell DateOffset="cell.Date"
+                                          Tasks="cell.Tasks"
+                                          CurrentMonth="_currentMonth" />
                         }
                     </tr>
                 }
@@ -112,19 +92,4 @@
 
     private Task PrevMonth() => LoadMonth(_currentMonth.AddMonths(-1));
     private Task NextMonth() => LoadMonth(_currentMonth.AddMonths(1));
-
-    private string GetTaskDisplayText(TaskItemLookupDto t)
-    {
-        if (t.IsAllDay)
-            return "• " + Truncate(t.Title, 15);
-        var time = t.StartDate.LocalDateTime.ToString("HH:mm");
-        return time + " " + Truncate(t.Title, 15);
-    }
-
-    private string Truncate(string value, int maxLength)
-    {
-        if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
-            return value;
-        return value.Substring(0, maxLength - 1) + "…";
-    }
 }
