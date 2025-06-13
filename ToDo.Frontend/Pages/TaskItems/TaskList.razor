@@ -1,0 +1,214 @@
+﻿@page "/tasks"
+@using ToDo.Shared.Enums
+@inject ITaskItemsService TaskItemsService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudTabs ActivePanelIndex="_activeFilter"
+                 ActivePanelIndexChanged="OnFilterChanged"
+                 Rounded="true"
+                 Size="Size.Small">
+            <MudTabPanel Text="Все" />
+            <MudTabPanel Text="Сегодня" />
+        </MudTabs>
+        <MudTextField T="string"
+                      Value="_search"
+                      ValueChanged="OnSearchChanged"
+                      Immediate="true"
+                      Placeholder="Поиск..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Class="ml-auto"
+                      Width="250px" />
+    </MudStack>
+
+    <MudTable T="TaskItemLookupDto"
+              @ref="_table"
+              ServerData="LoadServerData"
+              Hover="true"
+              Bordered="false"
+              Striped="false"
+              Elevation="0"
+              RowsPerPage="10"
+              Breakpoint="Breakpoint.Sm">
+
+        <HeaderContent>
+            <MudTh>Задача</MudTh>
+            <MudTh>Когда</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Priority</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+
+        <RowTemplate Context="item">
+            <MudTd DataLabel="Задача">
+                <MudText Typo="Typo.subtitle2">@item.Title</MudText>
+                @if (!string.IsNullOrWhiteSpace(item.Description))
+                {
+                    <MudText Typo="Typo.caption" Class="text-truncate" MaxWidth="200px">
+                        @item.Description
+                    </MudText>
+                }
+            </MudTd>
+
+            <MudTd DataLabel="Когда">
+                @item.StartDate.LocalDateTime.ToString("t")
+                —
+                @item.EndDate.LocalDateTime.ToString("t")
+            </MudTd>
+
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(@item.Status)" Class="mr-1">
+                    @item.Status
+                </MudChip>
+            </MudTd>
+
+            <MudTd DataLabel="Priority">
+                <MudChip T="string" Size="Size.Small" Color="@GetPriorityColor(item.Priority)">
+                    @item.Priority
+                </MudChip>
+            </MudTd>
+
+            <MudTd DataLabel="">
+            <!-- Переход к деталям -->
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                            Color="Color.Primary"
+                            OnClick='() => Nav.NavigateTo($"/tasks/{item.Id}")'
+                            Size="Size.Small" Edge="Edge.End" />
+
+            @if (item.Status != UserTaskStatus.Done)
+            {
+                <!-- Быстрое завершение задачи -->
+                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                Color="Color.Success"
+                                Size="Size.Small"
+                                OnClick='() => CompleteTask(item.Id)' />
+            }
+            else
+            {
+                <!-- Переоткрытие завершённой задачи -->
+                <MudIconButton Icon="@Icons.Material.Filled.Undo"
+                                Color="Color.Info"
+                                Size="Size.Small"
+                                OnClick='() => ReopenTask(item.Id)' />
+            }
+            </MudTd>
+        </RowTemplate>
+
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[]{2,10,20}" />
+        </PagerContent>
+
+    </MudTable>
+</MudPaper>
+
+@code {
+    private MudTable<TaskItemLookupDto>? _table;
+
+    private int _activeFilter = 0;   // 0 — Все, 1 — Сегодня
+    private string? _search;
+
+    // Событие при смене таба «Все/Сегодня»
+    private async Task OnFilterChanged(int index)
+    {
+        _activeFilter = index;
+        if (_table is not null)
+            await _table.ReloadServerData();
+    }
+
+    // Событие при изменении текста поиска
+    private async Task OnSearchChanged(string value)
+    {
+        _search = value;
+        if (_table is not null)
+            await _table.ReloadServerData();
+    }
+
+    private async Task<TableData<TaskItemLookupDto>> LoadServerData(TableState state, CancellationToken ct)
+    {
+        DateTimeOffset? dateFrom = null, dateTo = null;
+        if (_activeFilter == 1)
+        {
+            var utcMidnight = DateTime.UtcNow.Date;
+            dateFrom = new DateTimeOffset(utcMidnight, TimeSpan.Zero);
+
+            dateTo = new DateTimeOffset(utcMidnight.AddDays(1).AddTicks(-1), TimeSpan.Zero);
+
+        }
+
+        var query = new GetTaskItemListQueryDto
+        {
+            Page           = state.Page + 1,
+            PageSize       = state.PageSize,
+            DateFrom       = dateFrom,
+            DateTo         = dateTo,
+            Search         = _search,
+            SortBy         = state.SortLabel,
+            SortDescending = state.SortDirection == SortDirection.Descending
+        };
+        try
+        {
+            var result = await TaskItemsService.GetAllAsync(query);
+            return new TableData<TaskItemLookupDto>
+            {
+                TotalItems = result.TotalCount,
+                Items = result.Items ?? Array.Empty<TaskItemLookupDto>()
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+            Snackbar.Add($"Ошибка: {ex.Message}", Severity.Error);
+        }
+        return new TableData<TaskItemLookupDto>();
+    }
+    /// <summary>Помечает задачу выполненной</summary>
+    private async Task CompleteTask(Guid id)
+    {
+        try
+        {
+            await TaskItemsService.CompleteAsync(id);  // :contentReference[oaicite:3]{index=3}
+            Snackbar.Add("Задача отмечена выполненной", Severity.Success);
+            if (_table is not null)
+                await _table.ReloadServerData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Не удалось завершить задачу: {ex.Message}", Severity.Error);
+        }
+    }
+
+    /// <summary>Снимает отметку о выполнении и возвращает задачу в Todo</summary>
+    private async Task ReopenTask(Guid id)
+    {
+        try
+        {
+            await TaskItemsService.ReopenAsync(id);  // :contentReference[oaicite:4]{index=4}
+            Snackbar.Add("Задача снова в статусе «Todo»", Severity.Success);
+            if (_table is not null)
+                await _table.ReloadServerData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Не удалось переоткрыть задачу: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Color GetStatusColor(UserTaskStatus status) => status switch
+    {
+        UserTaskStatus.Done       => Color.Success,
+        UserTaskStatus.InProgress => Color.Warning,
+        UserTaskStatus.Todo       => Color.Info,
+        _                         => Color.Default
+    };
+
+    private Color GetPriorityColor(TaskPriority pri) => pri switch
+    {
+        TaskPriority.High   => Color.Error,
+        TaskPriority.Medium => Color.Primary,
+        TaskPriority.Low    => Color.Secondary,
+        _                   => Color.Default
+    };
+}

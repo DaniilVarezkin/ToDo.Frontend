@@ -1,23 +1,60 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
-@inject AuthenticationStateProvider AuthStateProvider
+@using MudBlazor
 @inject IAuthService AuthService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
 
-<AuthorizeView>
-    <Authorized>
-        <MudButton Variant="Variant.Text" OnClick="Logout">Выйти</MudButton>
-    </Authorized>
-    <NotAuthorized>
-        <MudButton Variant="Variant.Text" Href="/login">Войти</MudButton>
-        <MudButton Variant="Variant.Text" Href="/register">Регистрация</MudButton>
-    </NotAuthorized>
-</AuthorizeView>
+<MudNavMenu>
+    <AuthorizeView>
+        <Authorized Context="authState">
+            <MudText Class="ml-4 mt-2" Typo="Typo.subtitle2">
+                <MudIcon Icon="@Icons.Material.Filled.AccountCircle" />
+                @authState.User.FindFirst(c => c.Type == "email")?.Value
+            </MudText>
+
+            <MudNavLink OnClick="@Logout" DisableRipple="true" Class="ml-4">
+                <MudIcon Icon="@Icons.Material.Filled.ExitToApp" />
+                Выйти
+            </MudNavLink>
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="login" Match="NavLinkMatch.All">
+                <MudIcon Icon="@Icons.Material.Filled.Login" />
+                Войти
+            </MudNavLink>
+            <MudNavLink Href="register" Match="NavLinkMatch.All">
+                <MudIcon Icon="@Icons.Material.Filled.PersonAdd" />
+                Регистрация
+            </MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+
+    <MudDivider Class="my-2" />
+
+    <MudNavLink Href="tasks" Match="NavLinkMatch.Prefix">
+        <MudIcon Icon="@Icons.Material.Filled.List" />
+        Список задач
+    </MudNavLink>
+
+    <MudNavLink Href="tasks/calendar" Match="NavLinkMatch.Prefix">
+        <MudIcon Icon="@Icons.Material.Filled.DateRange" />
+        Календарь
+    </MudNavLink>
+
+    <MudNavLink Href="tasks/create" Match="NavLinkMatch.Prefix">
+        <MudIcon Icon="@Icons.Material.Filled.AddCircle" />
+        Новая задача
+    </MudNavLink>
+
+</MudNavMenu>
 
 @code {
     private async Task Logout()
     {
         await AuthService.LogoutAsync();
-        ((CustomAuthStateProvider)AuthStateProvider).NotifyTokenChanged(null);
-        Nav.NavigateTo("/login", true);
+        if (AuthStateProvider is CustomAuthStateProvider custom)
+            custom.NotifyTokenChanged(null);
+
+        Nav.NavigateTo("login", forceLoad: true);
     }
 }
