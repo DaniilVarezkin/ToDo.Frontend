@@ -1,0 +1,237 @@
+﻿@page "/tasks/form"
+@page "/tasks/form/{Id:guid}"
+@attribute [Authorize]
+
+@using ToDo.Shared.Dto.TaskItems
+@using ToDo.Shared.Enums
+@inject ITaskItemsService TaskItemsService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<MudPaper Class="pa-4">
+    <MudForm @ref="_form">
+        <MudStack Spacing="3">
+            <!-- Заголовок и описание -->
+            <MudTextField T="string"
+                          @bind-Value="_viewModel.Title"
+                          Label="Заголовок"
+                          Required="true"
+                          RequiredError="Заголовок обязателен"
+                          MaxLength="250" />
+
+            <MudTextField T="string"
+                          @bind-Value="_viewModel.Description"
+                          Label="Описание"
+                          MaxLength="1000"
+                          Lines="3" />
+
+            <!-- Весь день -->
+            <MudSwitch T="bool"
+                       @bind-Value="_viewModel.IsAllDay"
+                       Label="На весь день" />
+
+            <!-- Дата/время начала -->
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudDatePicker T="DateTime?"
+                               @bind-Date="_viewModel.StartDate"
+                               Label="Дата начала"
+                               Required="true"
+                               RequiredError="Укажите дату начала" />
+                <MudTimePicker T="TimeSpan?"
+                               @bind-Time="_viewModel.StartTime"
+                               Label="Время начала"
+                               Required="true"
+                               RequiredError="Укажите время начала" />
+            </MudStack>
+
+            <!-- Слайдер длительности -->
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.caption">Длительность (ч):</MudText>
+                <MudSlider T="int"
+                           @bind-Value="_viewModel.DurationHours"
+                           Min="0" Max="8" Step="1"
+                           Marks="@_durationMarks"
+                           Class="flex-grow-1" />
+                <MudText Typo="Typo.subtitle2" Class="ml-2">@($"{_viewModel.DurationHours} ч")</MudText>
+            </MudStack>
+
+            <!-- Дата/время окончания -->
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudDatePicker T="DateTime?"
+                               @bind-Date="_viewModel.EndDate"
+                               Label="Дата окончания"
+                               Required="true"
+                               RequiredError="Укажите дату окончания" />
+                <MudTimePicker T="TimeSpan?"
+                               @bind-Time="_viewModel.EndTime"
+                               Label="Время окончания"
+                               Required="true"
+                               RequiredError="Укажите время окончания" />
+            </MudStack>
+
+            <!-- Цвет, статус, приоритет -->
+            <MudTextField T="string"
+                          @bind-Value="_viewModel.Color"
+                          Label="Цвет (HEX или имя)"
+                          MaxLength="20" />
+
+            <MudSelect T="UserTaskStatus"
+                       @bind-Value="_viewModel.Status"
+                       Label="Статус">
+                @foreach (var status in Enum.GetValues<UserTaskStatus>())
+                {
+                    <MudSelectItem T="UserTaskStatus" Value="@status">@status</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="TaskPriority"
+                       @bind-Value="_viewModel.Priority"
+                       Label="Приоритет">
+                @foreach (var pri in Enum.GetValues<TaskPriority>())
+                {
+                    <MudSelectItem T="TaskPriority" Value="@pri">@pri</MudSelectItem>
+                }
+            </MudSelect>
+
+            <!-- Кнопки -->
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="@SubmitAsync">
+                    @(Id.HasValue ? "Сохранить" : "Создать")
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           OnClick='() => Nav.NavigateTo("/tasks")'>
+                    Отмена
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudForm>
+</MudPaper>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+    private MudForm _form = null!;
+    private TaskFormViewModel _viewModel = new();
+
+    private Dictionary<int, string> _durationMarks =
+        Enumerable.Range(0, 9).ToDictionary(i => i, i => i == 0 ? "0" : $"{i}ч");
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            // Редактирование
+            var dto = await TaskItemsService.GetAsync(Id.Value);
+            if (dto == null)
+            {
+                Snackbar.Add("Задача не найдена", Severity.Error);
+                Nav.NavigateTo("/tasks");
+                return;
+            }
+            // Копируем из dto в viewModel
+            _viewModel = new TaskFormViewModel
+            {
+                Id = dto.Id,
+                Title = dto.Title,
+                Description = dto.Description,
+                IsAllDay = dto.IsAllDay,
+                StartDate = dto.StartDate.UtcDateTime.Date,
+                StartTime = dto.StartDate.UtcDateTime.TimeOfDay,
+                EndDate = dto.EndDate.UtcDateTime.Date,
+                EndTime = dto.EndDate.UtcDateTime.TimeOfDay,
+                DurationHours = (int)(dto.EndDate - dto.StartDate).TotalHours,
+                Color = dto.Color,
+                Status = dto.Status,
+                Priority = dto.Priority,
+                IsRecurring = dto.IsRecurring,
+                RecurrenceRule = dto.RecurrenceRule
+            };
+        }
+        else
+        {
+            // Создание — дефолты
+            _viewModel.StartDate = DateTime.Today;
+            _viewModel.StartTime = TimeSpan.FromHours(9);
+            _viewModel.DurationHours = 1;
+            UpdateEndByDuration();
+        }
+    }
+
+    private void UpdateEndByDuration()
+    {
+        if (_viewModel.StartDate.HasValue && _viewModel.StartTime.HasValue)
+        {
+            var start = _viewModel.StartDate.Value.Date + _viewModel.StartTime.Value;
+            var end = start.AddHours(_viewModel.DurationHours);
+            _viewModel.EndDate = end.Date;
+            _viewModel.EndTime = end.TimeOfDay;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid) return;
+
+        // Общие UTC-преобразования
+        var startLocal = _viewModel.StartDate!.Value.Date + _viewModel.StartTime!.Value;
+        var endLocal = _viewModel.EndDate!.Value.Date + _viewModel.EndTime!.Value;
+        var startUtc = DateTime.SpecifyKind(startLocal, DateTimeKind.Utc);
+        var endUtc = DateTime.SpecifyKind(endLocal, DateTimeKind.Utc);
+
+        if (_viewModel.Id.HasValue)
+        {
+            // Map to UpdateTaskItemDto
+            var upd = new UpdateTaskItemDto
+            {
+                Id = _viewModel.Id.Value,
+                Title = _viewModel.Title,
+                Description = _viewModel.Description,
+                IsAllDay = _viewModel.IsAllDay,
+                StartDate = new DateTimeOffset(startUtc),
+                EndDate = new DateTimeOffset(endUtc),
+                Color = _viewModel.Color,
+                Status = _viewModel.Status,
+                Priority = _viewModel.Priority,
+                IsRecurring = _viewModel.IsRecurring,
+                RecurrenceRule = _viewModel.RecurrenceRule
+            };
+            try
+            {
+                await TaskItemsService.UpdateAsync(upd);
+                Snackbar.Add("Задача успешно обновлена", Severity.Success);
+                Nav.NavigateTo("/tasks");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Ошибка при сохранении: {ex.Message}", Severity.Error);
+            }
+        }
+        else
+        {
+            // Map to CreateTaskItemDto
+            var cr = new CreateTaskItemDto
+            {
+                Title = _viewModel.Title,
+                Description = _viewModel.Description,
+                IsAllDay = _viewModel.IsAllDay,
+                StartDate = new DateTimeOffset(startUtc),
+                EndDate = new DateTimeOffset(endUtc),
+                Color = _viewModel.Color,
+                Status = _viewModel.Status,
+                Priority = _viewModel.Priority
+            };
+            try
+            {
+                await TaskItemsService.CreateAsync(cr);
+                Snackbar.Add("Задача успешно создана", Severity.Success);
+                Nav.NavigateTo("/tasks");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Ошибка при создании: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}
