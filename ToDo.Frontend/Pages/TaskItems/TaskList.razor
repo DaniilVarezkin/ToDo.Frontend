@@ -12,10 +12,9 @@
     <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mb-4">
         <MudTabs ActivePanelIndex="_activeFilter"
                  ActivePanelIndexChanged="OnFilterChanged"
-                 Rounded="true"
-                 Size="Size.Small">
-            <MudTabPanel Text="Все" />
+                 Rounded="true">
             <MudTabPanel Text="Сегодня" />
+            <MudTabPanel Text="Все" />
         </MudTabs>
         <MudTextField T="string"
                       Value="_search"
@@ -24,21 +23,22 @@
                       Placeholder="Поиск..."
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search"
-                      Class="ml-auto"
-                      Width="250px" />
+                      Class="ml-auto"/>
     </MudStack>
 
     <TaskTableComponent @ref="_taskTable"
                         ServerData="LoadServerData"
                         ShowActionsColumn="true"
                         OnComplete="CompleteTask"
-                        OnReopen="ReopenTask" />
+                        OnReopen="ReopenTask"
+                        HidePagination="_hidePagination" />
 </MudPaper>
 
 @code {
     private TaskTableComponent? _taskTable;
     private int _activeFilter = 0;
     private string _search = string.Empty;
+    private bool _hidePagination = true;
 
     private async Task OnFilterChanged(int index)
     {
@@ -60,7 +60,7 @@
         // await Task.Delay(100000);
         DateTimeOffset? dateFrom = null;
         DateTimeOffset? dateTo = null;
-        if (_activeFilter == 1)
+        if (_activeFilter == 0)
         {
             var utcToday = DateTime.UtcNow.Date;
             dateFrom = new DateTimeOffset(utcToday, TimeSpan.Zero);
@@ -81,6 +81,7 @@
         try
         {
             var result = await TaskItemsService.GetAllAsync(query);
+            _hidePagination = result.TotalCount < 10;
             return new TableData<TaskItemLookupDto>
             {
                 TotalItems = result.TotalCount,

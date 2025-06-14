@@ -102,6 +102,19 @@ code {
     color: #c02d76;
 }
 
-.mud-table-loading {
-    display: none !important;
+/* Chrome, Edge, Safari */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+    /* фон пол€ из палитры темы */
+    -webkit-box-shadow: 0 0 0px 1000px var(--mud-palette-surface) inset !important;
+    box-shadow: 0 0 0px 1000px var(--mud-palette-surface) inset !important;
+    /* цвет текста из палитры темы */
+    -webkit-text-fill-color: var(--mud-palette-text-primary) !important;
+}
+
+/* Firefox */
+input:-moz-autofill {
+    box-shadow: 0 0 0px 1000px var(--mud-palette-surface) inset !important;
+    -moz-text-fill-color: var(--mud-palette-text-primary) !important;
 }

@@ -10,25 +10,40 @@
 
 <MudGrid Justify="Justify.Center">
     <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-6 mt-8">
+        <MudPaper Class="pa-6 mt-8" Elevation="4">
             <MudText Typo="Typo.h5" Class="mb-4">Вход в систему</MudText>
 
-            <MudForm @ref="form" @bind-IsValid="isValid" @bind-Errors="errors">
+            <MudForm @ref="form"
+                     @bind-IsValid="isValid"
+                     @bind-Errors="errors">
+
                 <MudTextField T="string"
                               Label="Email"
-                              @bind-Value="model.Email"
                               For="@(() => model.Email)"
+                              @bind-Value="model.Email"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.Email"
                               Required="true"
                               RequiredError="Email обязателен"
-                              Validation="@(new EmailAddressAttribute { ErrorMessage = "Неверный формат email" })" />
+                              Validation="@(new EmailAddressAttribute { ErrorMessage = "Неверный формат email" })"
+                              Immediate="true"
+                              Autocomplete="off" />
 
                 <MudTextField T="string"
                               Label="Пароль"
-                              @bind-Value="model.Password"
                               For="@(() => model.Password)"
-                              InputType="InputType.Password"
+                              @bind-Value="model.Password"
+                              Variant="Variant.Outlined"
+                              InputType="@passwordInput"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@passwordIcon"
+                              AdornmentAriaLabel="Показать/скрыть пароль"
+                              OnAdornmentClick="@TogglePasswordVisibility"
                               Required="true"
-                              RequiredError="Пароль обязателен" />
+                              RequiredError="Пароль обязателен"
+                              Autocomplete="new-password"
+                              Class="mt-4" />
 
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
@@ -37,22 +52,11 @@
                            OnClick="@OnSubmit">
                     @if (loading)
                     {
-                        <MudProgressCircular Size="Size.Medium" Class="mr-2" Indeterminate="true" />
+                        <MudProgressCircular Size="Size.Small" Class="mr-2" Indeterminate="true" />
                     }
                     Войти
                 </MudButton>
             </MudForm>
-
-            @if (errors?.Length > 0)
-            {
-                <MudPaper Class="pa-4 mt-4">
-                    <MudText Typo="Typo.subtitle2">Ошибки в форме (@errors.Length):</MudText>
-                    @foreach (var err in errors)
-                    {
-                        <MudText Color="Color.Error">@err</MudText>
-                    }
-                </MudPaper>
-            }
         </MudPaper>
     </MudItem>
 </MudGrid>
@@ -65,23 +69,29 @@
 
     private readonly LoginModel model = new();
 
-    // Вспомогательный класс с DataAnnotations
-    private class LoginModel
-    {
-        [Required(ErrorMessage = "Email обязателен")]
-        [EmailAddress(ErrorMessage = "Неверный формат email")]
-        public string Email { get; set; } = string.Empty;
+    // Переключатель видимости пароля
+    private bool showPassword;
+    private InputType passwordInput = InputType.Password;
+    private string passwordIcon = Icons.Material.Filled.VisibilityOff;
 
-        [Required(ErrorMessage = "Пароль обязателен")]
-        public string Password { get; set; } = string.Empty;
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+        if (showPassword)
+        {
+            passwordInput = InputType.Text;
+            passwordIcon = Icons.Material.Filled.Visibility;
+        }
+        else
+        {
+            passwordInput = InputType.Password;
+            passwordIcon = Icons.Material.Filled.VisibilityOff;
+        }
     }
 
     private async Task OnSubmit()
     {
         await form.Validate();
-
-        Console.WriteLine("isValid: " + isValid);
-
         if (!isValid)
             return;
 
@@ -94,19 +104,26 @@
                 Password = model.Password
             });
 
-            Console.WriteLine(token);
-
             ((CustomAuthStateProvider)AuthStateProvider).NotifyTokenChanged(token);
             Nav.NavigateTo("/", true);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка входа: {ex.Message}");
             Snackbar.Add($"Ошибка входа: {ex.Message}", Severity.Error);
         }
         finally
         {
             loading = false;
         }
+    }
+
+    private class LoginModel
+    {
+        [Required(ErrorMessage = "Email обязателен")]
+        [EmailAddress(ErrorMessage = "Неверный формат email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Пароль обязателен")]
+        public string Password { get; set; } = string.Empty;
     }
 }

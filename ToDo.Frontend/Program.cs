@@ -9,33 +9,34 @@ using ToDo.Frontend.Services.Auth;
 using ToDo.Frontend.Services.TaskItems;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
-
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddSyncfusionBlazor();
-builder.Services.AddMudServices();
-
 builder.Services.AddBlazoredLocalStorage();
+
+builder.Services.AddAuthorizationCore();
+
+builder.Services.AddScoped<CustomAuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(
+    sp => sp.GetRequiredService<CustomAuthStateProvider>());
 
 builder.Services.AddScoped<AuthHeaderHandler>();
 
-builder.Services.AddScoped(provider =>
+builder.Services.AddScoped(sp =>
 {
-    var handler = provider.GetRequiredService<AuthHeaderHandler>();
+    var handler = sp.GetRequiredService<AuthHeaderHandler>();
     handler.InnerHandler = new HttpClientHandler();
-    var client = new HttpClient(handler)
+    return new HttpClient(handler)
     {
         BaseAddress = new Uri("https://localhost:7011/")
     };
-    return client;
 });
+
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskItemsService, TaskItemsService>();
 
-
-builder.Services.AddAuthorizationCore();
-builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddSyncfusionBlazor();
+builder.Services.AddMudServices();
 
 await builder.Build().RunAsync();

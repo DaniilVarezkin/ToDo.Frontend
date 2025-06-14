@@ -1,48 +1,137 @@
 ﻿@page "/register"
 @attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
 @inject IAuthService AuthService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
 
-<MudPaper Elevation="4" Class="mx-auto mt-12 p-6" Style="max-width:400px;">
-    <MudText Typo="Typo.h5" Class="mb-4">Регистрация</MudText>
+<MudGrid Justify="Justify.Center">
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Class="pa-6 mt-8" Elevation="4">
+            <MudText Typo="Typo.h5" Class="mb-4">Регистрация</MudText>
 
-    <MudForm @ref="_form" OnValidSubmit="OnValidSubmit">
-        <MudTextField @bind-Value="_model.UserName"
-                      Label="Имя пользователя"
-                      Required="true"
-                      For="@(() => _model.UserName)" />
-        <MudTextField @bind-Value="_model.Email"
-                      Label="Email"
-                      Required="true"
-                      For="@(() => _model.Email)" />
-        <MudTextField @bind-Value="_model.Password"
-                      Label="Пароль"
-                      InputType="InputType.Password"
-                      Required="true"
-                      For="@(() => _model.Password)" />
+            <MudForm @ref="form"
+                     @bind-IsValid="isValid"
+                     @bind-Errors="errors"
+                     OnValidSubmit="OnValidSubmit">
 
-        <MudButton Type="Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Disabled="_loading">
-            @if (_loading)
-            {
-                <MudProgressCircular Size="Size.Medium" Class="mr-2" Indeterminate="true" />
-            }
-            Зарегистрироваться
-        </MudButton>
-    </MudForm>
-</MudPaper>
+                <MudTextField T="string"
+                              Label="Имя пользователя"
+                              For="@(() => model.UserName)"
+                              @bind-Value="model.UserName"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.Person"
+                              Required="true"
+                              RequiredError="Имя пользователя обязательно"
+                              Autocomplete="off"
+                              Class="mb-4" />
+
+                <MudTextField T="string"
+                              Label="Email"
+                              For="@(() => model.Email)"
+                              @bind-Value="model.Email"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.Email"
+                              Required="true"
+                              RequiredError="Email обязателен"
+                              Validation="@(new EmailAddressAttribute { ErrorMessage = "Неверный формат email" })"
+                              Immediate="true"
+                              Autocomplete="off"
+                              Class="mb-4" />
+
+                <MudTextField T="string"
+                              Label="Пароль"
+                              For="@(() => model.Password)"
+                              @bind-Value="model.Password"
+                              Variant="Variant.Outlined"
+                              InputType="@passwordInput"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@passwordIcon"
+                              AdornmentAriaLabel="Показать/скрыть пароль"
+                              OnAdornmentClick="@TogglePasswordVisibility"
+                              Required="true"
+                              RequiredError="Пароль обязателен"
+                              Autocomplete="new-password"
+                              Class="mb-4" />
+
+                <MudTextField T="string"
+                              Label="Повторите пароль"
+                              For="@(() => model.ConfirmPassword)"
+                              @bind-Value="model.ConfirmPassword"
+                              Variant="Variant.Outlined"
+                              InputType="@passwordInput"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@passwordIcon"
+                              AdornmentAriaLabel="Показать/скрыть пароль"
+                              OnAdornmentClick="@TogglePasswordVisibility"
+                              Required="true"
+                              RequiredError="Повторите пароль"
+                              Validation="@(new CompareAttribute(nameof(model.Password)) { ErrorMessage = "Пароли не совпадают" })"
+                              Autocomplete="new-password"
+                              Class="mb-6" />
+
+                <MudButton Type="Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="!isValid || loading"
+                           Class="w-full">
+                    @if (loading)
+                    {
+                        <MudProgressCircular Size="Size.Small" Class="mr-2" Indeterminate="true" />
+                    }
+                    Зарегистрироваться
+                </MudButton>
+
+            </MudForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
-    private MudForm _form = null!;
-    private bool _loading;
-    private readonly RegisterDto _model = new();
+    private MudForm form;
+    private bool isValid;
+    private string[] errors = Array.Empty<string>();
+    private bool loading;
+
+    private readonly RegisterModel model = new();
+
+    // Переключатель видимости пароля и подтверждения
+    private bool showPassword;
+    private InputType passwordInput = InputType.Password;
+    private string passwordIcon = Icons.Material.Filled.VisibilityOff;
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+        if (showPassword)
+        {
+            passwordInput = InputType.Text;
+            passwordIcon = Icons.Material.Filled.Visibility;
+        }
+        else
+        {
+            passwordInput = InputType.Password;
+            passwordIcon = Icons.Material.Filled.VisibilityOff;
+        }
+    }
 
     private async Task OnValidSubmit()
     {
-        _loading = true;
+        await form.Validate();
+        if (!isValid)
+            return;
+
+        loading = true;
         try
         {
-            await AuthService.RegisterAsync(_model);
+            await AuthService.RegisterAsync(new RegisterDto
+            {
+                UserName = model.UserName,
+                Email = model.Email,
+                Password = model.Password
+            });
             Snackbar.Add("Регистрация успешна, войдите в систему", Severity.Success);
             Nav.NavigateTo("/login");
         }
@@ -52,7 +141,24 @@
         }
         finally
         {
-            _loading = false;
+            loading = false;
         }
+    }
+
+    private class RegisterModel
+    {
+        [Required(ErrorMessage = "Имя пользователя обязательно")]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email обязателен")]
+        [EmailAddress(ErrorMessage = "Неверный формат email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Пароль обязателен")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Повторите пароль")]
+        [Compare(nameof(Password), ErrorMessage = "Пароли не совпадают")]
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

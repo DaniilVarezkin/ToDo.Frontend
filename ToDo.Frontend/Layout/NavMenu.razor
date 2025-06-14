@@ -4,47 +4,56 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
 
-<MudNavMenu>
+<MudNavMenu Class="px-2">
+
+    <!-- Блок авторизации -->
     <AuthorizeView>
         <Authorized Context="authState">
-            <MudText Class="ml-4 mt-2" Typo="Typo.subtitle2">
-                <MudIcon Icon="@Icons.Material.Filled.AccountCircle" />
-                @authState.User.FindFirst(c => c.Type == "email")?.Value
-            </MudText>
-
-            <MudNavLink OnClick="@Logout" DisableRipple="true" Class="ml-4">
-                <MudIcon Icon="@Icons.Material.Filled.ExitToApp" />
-                Выйти
-            </MudNavLink>
+            <MudNavGroup Title="@authState.User.FindFirst(c => c.Type == "email")?.Value"
+                         Icon="@Icons.Material.Filled.AccountCircle"
+                         HideToggle="true">
+                <MudNavLink OnClick="@Logout"
+                            Icon="@Icons.Material.Filled.ExitToApp"
+                            DisableRipple="true">
+                    Выйти
+                </MudNavLink>
+            </MudNavGroup>
+            <MudNavGroup Title="Задачи" Icon="@Icons.Material.Filled.List" Expanded="true">
+                <MudNavLink Href="tasks"
+                            Match="NavLinkMatch.Prefix"
+                            Icon="@Icons.Material.Filled.ListAlt">
+                    Список задач
+                </MudNavLink>
+                <MudNavLink Href="tasks/calendar"
+                            Match="NavLinkMatch.Prefix"
+                            Icon="@Icons.Material.Filled.DateRange">
+                    Календарь
+                </MudNavLink>
+                <MudNavLink Href="tasks/form"
+                            Match="NavLinkMatch.Prefix"
+                            Icon="@Icons.Material.Filled.AddCircle">
+                    Новая задача
+                </MudNavLink>
+            </MudNavGroup>
         </Authorized>
         <NotAuthorized>
-            <MudNavLink Href="login" Match="NavLinkMatch.All">
-                <MudIcon Icon="@Icons.Material.Filled.Login" />
-                Войти
-            </MudNavLink>
-            <MudNavLink Href="register" Match="NavLinkMatch.All">
-                <MudIcon Icon="@Icons.Material.Filled.PersonAdd" />
-                Регистрация
-            </MudNavLink>
+            <MudNavGroup Title="Гость" Icon="@Icons.Material.Filled.Person"
+                         HideToggle="true">
+                <MudNavLink Href="login"
+                            Match="NavLinkMatch.All"
+                            Icon="@Icons.Material.Filled.Login">
+                    Войти
+                </MudNavLink>
+                <MudNavLink Href="register"
+                            Match="NavLinkMatch.All"
+                            Icon="@Icons.Material.Filled.PersonAdd">
+                    Регистрация
+                </MudNavLink>
+            </MudNavGroup>
         </NotAuthorized>
     </AuthorizeView>
 
     <MudDivider Class="my-2" />
-
-    <MudNavLink Href="tasks" Match="NavLinkMatch.Prefix">
-        <MudIcon Icon="@Icons.Material.Filled.List" />
-        Список задач
-    </MudNavLink>
-
-    <MudNavLink Href="tasks/calendar" Match="NavLinkMatch.Prefix">
-        <MudIcon Icon="@Icons.Material.Filled.DateRange" />
-        Календарьs
-    </MudNavLink>
-
-    <MudNavLink Href="tasks/form" Match="NavLinkMatch.Prefix">
-        <MudIcon Icon="@Icons.Material.Filled.AddCircle" />
-        Новая задача
-    </MudNavLink>
 
 </MudNavMenu>
 

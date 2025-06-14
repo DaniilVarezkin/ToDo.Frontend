@@ -26,10 +26,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\ToDo.Shared\ToDo.Shared\ToDo.Shared.csproj" />
 	</ItemGroup>
-	
-	<ItemGroup>
-	  <Folder Include="Services\ApiClient\" />
-	</ItemGroup>
 
 
 </Project>

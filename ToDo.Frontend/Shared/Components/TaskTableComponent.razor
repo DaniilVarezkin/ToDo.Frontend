@@ -11,34 +11,29 @@
           @ref="_table"
           Items="Tasks"
           ServerData="ServerData"
-          Elevated="false"
           Dense="true"
           Hover="true"
-          RowsPerPageOptions="new int[]{2,10,20}"
           Loading="false"
-          LoadingProgressColor="Color.Transparent">
+          LoadingProgressColor="Color.Transparent"
+          RowsPerPage="10">
     <HeaderContent>
-    <!-- Сортировка по StartDate -->
+
     <MudTh>
         <MudTableSortLabel T="TaskItemLookupDto" SortLabel="StartDate">Когда</MudTableSortLabel>
     </MudTh>
 
-    <!-- Сортировка по Title -->
     <MudTh>
         <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Title">Задача</MudTableSortLabel>
     </MudTh>
 
-    <!-- Сортировка по Status -->
     <MudTh>
         <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Status">Статус</MudTableSortLabel>
     </MudTh>
 
-    <!-- Сортировка по Priority -->
     <MudTh>
         <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Priority">Приоритет</MudTableSortLabel>
     </MudTh>
 
-    <!-- Колонки действий без сортировки -->
     <MudTh></MudTh>
     <MudTh></MudTh>
 </HeaderContent>
@@ -95,16 +90,21 @@
         }
     </RowTemplate>
 
-    <PagerContent>
-        <MudTablePager HideRowsPerPage="true"
-                       HidePageNumber="true"
-                       HorizontalAlignment="HorizontalAlignment.Center" />
+        <PagerContent>
+        @if (!HidePagination)
+        {
+            <MudTablePager HideRowsPerPage="true"
+                           HidePageNumber="true"
+                           HorizontalAlignment="HorizontalAlignment.Center" />
+        }
     </PagerContent>
+   
 
 </MudTable>
 
 @code {
     private MudTable<TaskItemLookupDto>? _table;
+    [Parameter] public bool HidePagination { get; set; } = false;
 
     /// <summary>Статические данные (для client-side)</summary>
     [Parameter] public IEnumerable<TaskItemLookupDto>? Tasks { get; set; }
