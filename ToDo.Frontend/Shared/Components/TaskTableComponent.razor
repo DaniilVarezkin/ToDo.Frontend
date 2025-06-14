@@ -87,6 +87,12 @@
                                Size="Size.Small"
                                OnClick='() => Nav.NavigateTo($"/tasks/form/{task.Id}")' />
             </MudTd>
+            <MudTd DataLabel="Удалить">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               OnClick="() => OnDelete.InvokeAsync(task.Id)" />
+            </MudTd>
         }
     </RowTemplate>
 
@@ -104,21 +110,14 @@
 
 @code {
     private MudTable<TaskItemLookupDto>? _table;
+
     [Parameter] public bool HidePagination { get; set; } = false;
-
-    /// <summary>Статические данные (для client-side)</summary>
     [Parameter] public IEnumerable<TaskItemLookupDto>? Tasks { get; set; }
-
-    /// <summary>Функция загрузки серверных данных</summary>
     [Parameter] public Func<TableState, CancellationToken, Task<TableData<TaskItemLookupDto>>>? ServerData { get; set; }
-
-    /// <summary>Показывать колонку действий</summary>
     [Parameter] public bool ShowActionsColumn { get; set; } = false;
-
-    /// <summary>Событие: отметить выполненной</summary>
     [Parameter] public EventCallback<Guid> OnComplete { get; set; }
-    /// <summary>Событие: переоткрыть задачу</summary>
     [Parameter] public EventCallback<Guid> OnReopen { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
 
     [Inject] private NavigationManager Nav { get; set; } = default!;
 

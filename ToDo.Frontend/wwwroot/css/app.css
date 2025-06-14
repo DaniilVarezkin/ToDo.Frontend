@@ -102,6 +102,10 @@ code {
     color: #c02d76;
 }
 
+.mud-table-loading {
+    display: none !important;
+}
+
 /* Chrome, Edge, Safari */
 input:-webkit-autofill,
 textarea:-webkit-autofill,

@@ -7,6 +7,7 @@
 @inject ITaskItemsService TaskItemsService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <MudPaper Class="pa-4">
     <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mb-4">
@@ -31,7 +32,8 @@
                         ShowActionsColumn="true"
                         OnComplete="CompleteTask"
                         OnReopen="ReopenTask"
-                        HidePagination="_hidePagination" />
+                        HidePagination="_hidePagination" 
+                        OnDelete="DeleteTask" />
 </MudPaper>
 
 @code {
@@ -124,4 +126,27 @@
             Snackbar.Add($"Ошибка открытия: {ex.Message}", Severity.Error);
         }
     }
+
+    private async Task DeleteTask(Guid id)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Подтверждение удаления",
+            "Вы уверены, что хотите удалить эту задачу?",
+            yesText: "Да", cancelText: "Отмена");
+        if (confirmed == true)
+        {
+            try
+            {
+                await TaskItemsService.DeleteAsync(id);
+                Snackbar.Add("Задача удалена", Severity.Success);
+                if (_taskTable is not null)
+                    await _taskTable.ReloadServerDataAsync();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Ошибка удаления: {ex.Message}", Severity.Error);
+            }
+        }
+    }
 }
+
