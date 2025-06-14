@@ -2,38 +2,36 @@
 @inject NavigationManager Nav
 
 <td class="calendar-cell @CeilClassCss" @onclick='NavigateToDayTasksPage'>
-
-    @if (Tasks.Count > 0)
-    {
-        <MudBadge Color="Color.Default"
-                  Content="@Tasks.Count"
-                  Style="position:absolute; top:20px; right:20px; z-index:1;" />
-    }
-
-    <div class="d-flex justify-space-start align-items-center mb-2">
-        <MudText Typo="Typo.subtitle2" Class="m-0">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.body2">
             @Date.Day
         </MudText>
-    </div>
-    <div style="overflow-y:auto; max-height:140px;">
-        @foreach (var task in Tasks.Take(3))
+        @if (Tasks.Any())
         {
-            <TaskChipComponent TaskItem="task" />
+            <MudChip T="int" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">
+                @Tasks.Count
+            </MudChip>
         }
-        @if (Tasks.Count > 3)
-        {
-            <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1 text-secondary">
-                +@((Tasks.Count - 3)) more
-            </MudText>
-        }
-    </div>
+    </MudStack>
+
+    @foreach (var task in Tasks.Take(MaxTaskCount))
+    {
+        <TaskChipComponent TaskItem="task" />
+    }
+
+    @if (Tasks.Count > MaxTaskCount)
+    {
+        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">
+            +@((Tasks.Count - MaxTaskCount)) more
+        </MudChip>
+    }    
 </td>
 
 @code {
     [Parameter] public DateTimeOffset DateOffset { get; set; }
     [Parameter] public IList<TaskItemLookupDto> Tasks { get; set; } = Array.Empty<TaskItemLookupDto>();
     [Parameter] public DateTime CurrentMonth { get; set; }
-
+    [Parameter] public int MaxTaskCount { get; set; } = 3;
     private DateTime Date => DateOffset.DateTime;
     private bool InMonth => Date.Month == CurrentMonth.Month;
     private bool IsToday => Date.Date == DateTime.Today;
