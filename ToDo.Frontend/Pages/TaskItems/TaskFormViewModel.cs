@@ -43,11 +43,11 @@ namespace ToDo.Frontend.Pages.TaskItems
             }
         }
 
-        public string DurationLabel => FormatDuration(_durationBlocks);
+        public string DurationLabel => FormatDuration(_durationBlocks, true);
 
         public readonly string[] DurationMarks =
             Enumerable.Range(0, 17)
-                      .Select(FormatDuration)
+                      .Select(i => FormatDuration(i, false))
                       .ToArray();
 
         [MaxLength(20)]
@@ -122,11 +122,21 @@ namespace ToDo.Frontend.Pages.TaskItems
         {
             var totalMin = blocks * 15;
             var h = totalMin / 60;
+            var m = totalMin % 60;
 
-            if (totalMin == 0) return "0";
+            if (totalMin == 0)
+                return "0";
 
-            if (totalMin % 60 == 0) return $"{h}ч";
-            else return string.Empty;
+            if (m == 0 && h > 0)
+                return $"{h}ч";
+
+            if (!useMin)
+                return string.Empty;
+
+            if (h > 0)
+                return $"{h}ч {m} мин";
+            else
+                return $"{m} мин";
 
         }
     }

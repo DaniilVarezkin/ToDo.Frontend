@@ -40,8 +40,6 @@ namespace ToDo.Frontend.Services.Auth
                 try
                 {
                     problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-                    Console.WriteLine(problemDetails?.Title);
-                    Console.WriteLine(problemDetails?.Detail);
                 }
                 catch
                 {
@@ -49,7 +47,7 @@ namespace ToDo.Frontend.Services.Auth
 
                 var message = problemDetails?.Title
                               ?? $"Сервер вернул {(int)response.StatusCode} {response.ReasonPhrase}";
-                throw new ServerException(message);
+                throw new ServerException(message, problemDetails);
             }
         }
 

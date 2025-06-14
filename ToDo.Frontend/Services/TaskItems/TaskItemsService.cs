@@ -1,7 +1,9 @@
-﻿using System.Net.Http.Json;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Net.Http.Json;
+using ToDo.Frontend.Common.Exceptions;
 using ToDo.Shared.Dto.Common;
 using ToDo.Shared.Dto.TaskItems;
-using Microsoft.AspNetCore.WebUtilities;
 
 namespace ToDo.Frontend.Services.TaskItems
 {
@@ -64,10 +66,24 @@ namespace ToDo.Frontend.Services.TaskItems
         public async Task<Guid> CreateAsync(CreateTaskItemDto dto)
         {
             var response = await _http.PostAsJsonAsync("api/task-items/Create", dto);
-            response.EnsureSuccessStatusCode();
 
-            // В ответе CreatedAtAction возвращает GUID в теле
-            return await response.Content.ReadFromJsonAsync<Guid>()!;
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<Guid>()!;
+            }
+            ValidationProblemDetails? problemDetails = new ValidationProblemDetails();
+            try
+            {
+                problemDetails = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+                var errors = problemDetails.Errors.SelectMany(e => $"{e.Key} {e.Value}");
+                Console.WriteLine(string.Join(", ", errors));
+            }
+            catch { }
+
+            var message = problemDetails?.Title
+                              ?? $"Сервер вернул {(int)response.StatusCode} {response.ReasonPhrase}";
+            throw new ServerException(message, problemDetails);
+
         }
 
         public async Task UpdateAsync(UpdateTaskItemDto dto)

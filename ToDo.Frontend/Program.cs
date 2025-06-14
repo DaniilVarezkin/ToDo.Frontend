@@ -1,9 +1,11 @@
 using Blazored.LocalStorage;
+using FluentValidation;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using Syncfusion.Blazor;
+using System.Reflection;
 using ToDo.Frontend;
 using ToDo.Frontend.Services.Auth;
 using ToDo.Frontend.Services.Statistic;
@@ -16,6 +18,8 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddBlazoredLocalStorage();
 
 builder.Services.AddAuthorizationCore();
+
+builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(
