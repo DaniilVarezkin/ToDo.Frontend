@@ -2,121 +2,133 @@
 @page "/tasks/form/{Id:guid}"
 @attribute [Authorize]
 
+@using MudBlazor
 @using ToDo.Shared.Dto.TaskItems
 @using ToDo.Shared.Enums
 @inject ITaskItemsService TaskItemsService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
 
-<MudPaper Class="pa-4">
+<MudPaper Class="pa-6 mx-auto" Style="max-width:800px;">
     <MudForm @ref="_form">
-        <MudStack Spacing="3">
-            <!-- Заголовок и описание -->
-            <MudTextField T="string"
-                          @bind-Value="_viewModel.Title"
-                          Label="Заголовок"
-                          Required="true"
-                          RequiredError="Заголовок обязателен"
-                          MaxLength="250" />
+        <MudGrid Spacing="3">
+            <!-- Заголовок -->
+            <MudItem xs="12">
+                <MudTextField T="string"
+                              @bind-Value="_viewModel.Title"
+                              Label="Заголовок"
+                              Required="true"
+                              RequiredError="Обязательное поле"
+                              Variant="Variant.Outlined"
+                              Style="width:100%;" />
+            </MudItem>
 
-            <MudTextField T="string"
-                          @bind-Value="_viewModel.Description"
-                          Label="Описание"
-                          MaxLength="1000"
-                          Lines="3" />
 
-            <!-- Весь день -->
-            <MudSwitch T="bool"
-                       @bind-Value="_viewModel.IsAllDay"
-                       Color="Color.Primary"
-                       Label="На весь день" />
 
-            <!-- Дата/время начала -->
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                <MudDatePicker T="DateTime?"
-                               @bind-Date="_viewModel.StartDate"
-                               Label="Дата начала"
-                               Required="true"
-                               RequiredError="Укажите дату начала" />
-            @if(!_viewModel.IsAllDay)
-            {
-                    <MudTimePicker T="TimeSpan?"
-                                   @bind-Time="_viewModel.StartTime"
-                                   Label="Время начала"
-                                   Required="true"
-                                   RequiredError="Укажите время начала" />
-            }
-            </MudStack>
+            <!-- «Весь день» + диапазон дат -->
+            <MudItem xs="12" >
+                <MudCheckBox T="bool"
+                             Color="Color.Primary"
+                             Label="Весь день" 
+                             ValueChanged="OnIsAllDayChanged"/>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudDateRangePicker
+                    @bind-DateRange="_viewModel.DateRange"
+                    Label="Период"
+                    Variant="Variant.Outlined"
+                    Required="true"
+                    RequiredError="Укажите даты"
+                    Style="width:100%;" />
+            </MudItem>
 
             @if (!_viewModel.IsAllDay)
             {
+                <!-- Время начала / окончания -->
+                <MudItem xs="12" sm="3">
+                    <MudTimePicker T="TimeSpan?"
+                                   @bind-Time="_viewModel.StartTime"
+                                   Label="Время начала"
+                                   Variant="Variant.Outlined"
+                                   Required="true"
+                                   RequiredError="Укажите время начала"
+                                   Style="width:100%;" />
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudTimePicker T="TimeSpan?"
+                                   @bind-Time="_viewModel.EndTime"
+                                   Label="Время окончания"
+                                   Variant="Variant.Outlined"
+                                   Required="true"
+                                   RequiredError="Укажите время окончания"
+                                   Style="width:100%;" />
+                </MudItem>
+
                 <!-- Слайдер длительности -->
-                <MudStack Row="false" AlignItems="AlignItems.Start">
-                    <MudText Typo="Typo.caption">Длительность: @_viewModel.DurationLabel</MudText>
-                <MudSlider T="int"
-                           @bind-Value="_viewModel.DurationBlocks"
-                           Min="1" Max="16" Step="1" TickMarks="true"
-                           TickMarkLabels="_durationMarks"
-                           Class="flex-grow-1 ps-2" 
-                           Style="max-width: 500px; width: 100%;" />
-                </MudStack>
+                <MudItem xs="12" Class="mx-3 mb-2">
+                    <MudText Typo="Typo.body2">
+                        Длительность: @(_viewModel.DurationLabel == "0" ? "Мгновенно" :_viewModel.DurationLabel)
+                    </MudText>
+                    <MudSlider T="int"
+                               @bind-Value="_viewModel.DurationBlocks"
+                               Min="0" Max="16" Step="1"
+                               TickMarks="true"
+                               TickMarkLabels="@_viewModel.DurationMarks"
+                               Class="mt-1" />
+                </MudItem>
             }
+            <MudFlexBreak />
+            <MudItem xs="12" sm="4">
+                <MudSelect T="UserTaskStatus"
+                           @bind-Value="_viewModel.Status"
+                           Label="Статус"
+                           Variant="Variant.Outlined"
+                           Style="width:100%;">
+                    @foreach (var s in Enum.GetValues<UserTaskStatus>())
+                    {
+                        <MudSelectItem Value="@s">@s</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect T="TaskPriority"
+                           @bind-Value="_viewModel.Priority"
+                           Label="Приоритет"
+                           Variant="Variant.Outlined"
+                           Style="width:100%;">
+                    @foreach (var p in Enum.GetValues<TaskPriority>())
+                    {
+                        <MudSelectItem Value="@p">@p</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
 
-            <!-- Дата/время окончания -->
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                <MudDatePicker T="DateTime?"
-                               @bind-Date="_viewModel.EndDate"
-                               Label="Дата окончания"
-                               Required="true"
-                               RequiredError="Укажите дату окончания" />
-            @if(!_viewModel.IsAllDay)
-            {
-                <MudTimePicker T="TimeSpan?"
-                                @bind-Time="_viewModel.EndTime"
-                                Label="Время окончания"
-                                Required="true"
-                                RequiredError="Укажите время окончания" />
-            }
-
-            </MudStack>
-
-            <!-- Цвет, статус, приоритет -->
-            <MudTextField T="string"
-                          @bind-Value="_viewModel.Color"
-                          Label="Цвет (HEX или имя)"
-                          MaxLength="20" />
-
-            <MudSelect T="UserTaskStatus"
-                       @bind-Value="_viewModel.Status"
-                       Label="Статус">
-                @foreach (var status in Enum.GetValues<UserTaskStatus>())
-                {
-                    <MudSelectItem T="UserTaskStatus" Value="@status">@status</MudSelectItem>
-                }
-            </MudSelect>
-
-            <MudSelect T="TaskPriority"
-                       @bind-Value="_viewModel.Priority"
-                       Label="Приоритет">
-                @foreach (var pri in Enum.GetValues<TaskPriority>())
-                {
-                    <MudSelectItem T="TaskPriority" Value="@pri">@pri</MudSelectItem>
-                }
-            </MudSelect>
+                        <!-- Описание -->
+            <MudItem xs="12">
+                <MudTextField T="string"
+                              @bind-Value="_viewModel.Description"
+                              Label="Описание"
+                              Variant="Variant.Outlined"
+                              Lines="3"
+                              MaxLength="1000"
+                              Style="width:100%;" />
+            </MudItem>
 
             <!-- Кнопки -->
-            <MudStack Row="true" Spacing="2">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           OnClick="@SubmitAsync">
-                    @(Id.HasValue ? "Сохранить" : "Создать")
-                </MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           OnClick='() => Nav.NavigateTo("/tasks")'>
-                    Отмена
-                </MudButton>
-            </MudStack>
-        </MudStack>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="@SubmitAsync">
+                        @(Id.HasValue ? "Сохранить" : "Создать")
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               OnClick='() => Nav.NavigateTo("/tasks")'>
+                        Отмена
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
     </MudForm>
 </MudPaper>
 
@@ -124,11 +136,6 @@
     [Parameter] public Guid? Id { get; set; }
     private MudForm _form = null!;
     private TaskFormViewModel _viewModel = new();
-
-    private readonly string[] _durationMarks =
-        Enumerable.Range(0, 17)
-                  .Select(i => (i % 4 == 0) ? $"{(i * 15) / 60}ч" :  "")
-                  .ToArray();
 
     protected override async Task OnInitializedAsync()
     {
@@ -142,32 +149,28 @@
                 Nav.NavigateTo("/tasks");
                 return;
             }
-            // Копируем из dto в viewModel
-            _viewModel = new TaskFormViewModel
-            {
-                Id = dto.Id,
-                Title = dto.Title,
-                Description = dto.Description,
-                IsAllDay = dto.IsAllDay,
-                StartDate = dto.StartDate.UtcDateTime.Date,
-                StartTime = dto.StartDate.UtcDateTime.TimeOfDay,
-                EndDate = dto.EndDate.UtcDateTime.Date,
-                EndTime = dto.EndDate.UtcDateTime.TimeOfDay,
-                DurationBlocks = (int)(dto.EndDate - dto.StartDate).TotalHours * 4,
-                Color = dto.Color,
-                Status = dto.Status,
-                Priority = dto.Priority,
-                IsRecurring = dto.IsRecurring,
-                RecurrenceRule = dto.RecurrenceRule
-            };
+            _viewModel = new TaskFormViewModel(dto);
         }
         else
         {
-            // Создание — дефолты
-            _viewModel.StartDate = DateTime.Today;
-            _viewModel.StartTime = TimeSpan.FromHours(9);
-            _viewModel.DurationBlocks = 1;
+            // Создание — сразу заполняем все нужные поля
+            _viewModel.StartDate      = DateTime.Today;
+            _viewModel.StartTime      = TimeSpan.FromHours(9);
+            _viewModel.DurationBlocks = 4; // 1 час
+
+            // Вычисляем конец задачи, чтобы EndDate/EndTime были не null
+            var start = _viewModel.StartDate.Value.Date + _viewModel.StartTime.Value;
+            var end   = start.AddMinutes(_viewModel.DurationBlocks * 15);
+            _viewModel.EndDate = end.Date;
+            _viewModel.EndTime = end.TimeOfDay;
         }
+
+        // И только теперь безопасно создаём DateRange
+        if (_viewModel.StartDate.HasValue && _viewModel.EndDate.HasValue)
+            _viewModel.DateRange = new DateRange(
+                _viewModel.StartDate.Value,
+                _viewModel.EndDate.Value
+            );
     }
 
     private async Task SubmitAsync()
@@ -175,29 +178,14 @@
         await _form.Validate();
         if (!_form.IsValid) return;
 
-        // Общие UTC-преобразования
         var startLocal = _viewModel.StartDate!.Value.Date + _viewModel.StartTime!.Value;
-        var endLocal = _viewModel.EndDate!.Value.Date + _viewModel.EndTime!.Value;
-        var startUtc = DateTime.SpecifyKind(startLocal, DateTimeKind.Utc);
-        var endUtc = DateTime.SpecifyKind(endLocal, DateTimeKind.Utc);
+        var endLocal   = _viewModel.EndDate!.Value.Date   + _viewModel.EndTime!.Value;
+        var startUtc   = DateTime.SpecifyKind(startLocal, DateTimeKind.Utc);
+        var endUtc     = DateTime.SpecifyKind(endLocal,   DateTimeKind.Utc);
 
         if (_viewModel.Id.HasValue)
         {
-            // Map to UpdateTaskItemDto
-            var upd = new UpdateTaskItemDto
-            {
-                Id = _viewModel.Id.Value,
-                Title = _viewModel.Title,
-                Description = _viewModel.Description,
-                IsAllDay = _viewModel.IsAllDay,
-                StartDate = new DateTimeOffset(startUtc),
-                EndDate = new DateTimeOffset(endUtc),
-                Color = _viewModel.Color,
-                Status = _viewModel.Status,
-                Priority = _viewModel.Priority,
-                IsRecurring = _viewModel.IsRecurring,
-                RecurrenceRule = _viewModel.RecurrenceRule
-            };
+            var upd = _viewModel.ToUpdateDto(startUtc, endUtc);
             try
             {
                 await TaskItemsService.UpdateAsync(upd);
@@ -211,18 +199,7 @@
         }
         else
         {
-            // Map to CreateTaskItemDto
-            var cr = new CreateTaskItemDto
-            {
-                Title = _viewModel.Title,
-                Description = _viewModel.Description,
-                IsAllDay = _viewModel.IsAllDay,
-                StartDate = new DateTimeOffset(startUtc),
-                EndDate = new DateTimeOffset(endUtc),
-                Color = _viewModel.Color,
-                Status = _viewModel.Status,
-                Priority = _viewModel.Priority
-            };
+            var cr = _viewModel.ToCreateDto(startUtc, endUtc);
             try
             {
                 await TaskItemsService.CreateAsync(cr);
@@ -235,4 +212,9 @@
             }
         }
     }
-}
+
+    private void OnIsAllDayChanged(bool value)
+    {
+         _viewModel.IsAllDay = value;
+    }
+} 

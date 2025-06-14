@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MudBlazor;
+using System.ComponentModel.DataAnnotations;
+using ToDo.Shared.Dto.TaskItems;
 using ToDo.Shared.Enums;
 
 namespace ToDo.Frontend.Pages.TaskItems
@@ -17,17 +19,18 @@ namespace ToDo.Frontend.Pages.TaskItems
 
         [Required]
         public DateTime? StartDate { get; set; }
-
         [Required]
         public TimeSpan? StartTime { get; set; }
 
         [Required]
         public DateTime? EndDate { get; set; }
-
         [Required]
         public TimeSpan? EndTime { get; set; }
 
-        private int _durationBlocks = 4; // 4×15м = 1ч
+        // диапазон для DateRangePicker
+        public DateRange? DateRange { get; set; }
+
+        private int _durationBlocks = 4;
         [Required]
         public int DurationBlocks
         {
@@ -40,30 +43,41 @@ namespace ToDo.Frontend.Pages.TaskItems
             }
         }
 
-        // человекочитаемая подпись
-        public string DurationLabel
-        {
-            get
-            {
-                var totalMin = _durationBlocks * 15;
-                var h = totalMin / 60;
-                var m = totalMin % 60;
-                return h > 0
-                    ? (m > 0 ? $"{h}ч {m} мин" : $"{h}ч")
-                    : $"{m} мин";
-            }
-        }
+        public string DurationLabel => FormatDuration(_durationBlocks);
+
+        public readonly string[] DurationMarks =
+            Enumerable.Range(0, 17)
+                      .Select(FormatDuration)
+                      .ToArray();
 
         [MaxLength(20)]
         public string Color { get; set; } = "#2196F3";
 
         public UserTaskStatus Status { get; set; } = UserTaskStatus.Todo;
-
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
 
-        // если нужна рекурсия
         public bool IsRecurring { get; set; }
         public string? RecurrenceRule { get; set; }
+
+        public TaskFormViewModel() { }
+
+        public TaskFormViewModel(TaskItemDetailsVm dto)
+        {
+            Id = dto.Id;
+            Title = dto.Title;
+            Description = dto.Description;
+            IsAllDay = dto.IsAllDay;
+            StartDate = dto.StartDate.UtcDateTime.Date;
+            StartTime = dto.StartDate.UtcDateTime.TimeOfDay;
+            EndDate = dto.EndDate.UtcDateTime.Date;
+            EndTime = dto.EndDate.UtcDateTime.TimeOfDay;
+            _durationBlocks = (int)(dto.EndDate - dto.StartDate).TotalMinutes / 15;
+            Status = dto.Status;
+            Priority = dto.Priority;
+            IsRecurring = dto.IsRecurring;
+            RecurrenceRule = dto.RecurrenceRule;
+        }
+
         private void UpdateEndByDuration()
         {
             if (StartDate.HasValue && StartTime.HasValue)
@@ -72,8 +86,48 @@ namespace ToDo.Frontend.Pages.TaskItems
                 var end = start.AddMinutes(_durationBlocks * 15);
                 EndDate = end.Date;
                 EndTime = end.TimeOfDay;
+                DateRange = new DateRange(StartDate.Value, EndDate.Value);
             }
         }
-    }
 
+        public CreateTaskItemDto ToCreateDto(DateTime startUtc, DateTime endUtc) => new()
+        {
+            Title = Title,
+            Description = Description,
+            IsAllDay = IsAllDay,
+            StartDate = new DateTimeOffset(startUtc),
+            EndDate = new DateTimeOffset(endUtc),
+            Status = Status,
+            Priority = Priority,
+            IsRecurring = IsRecurring,
+            RecurrenceRule = RecurrenceRule
+        };
+
+        public UpdateTaskItemDto ToUpdateDto(DateTime startUtc, DateTime endUtc) => new()
+        {
+            Id = Id!.Value,
+            Title = Title,
+            Description = Description,
+            IsAllDay = IsAllDay,
+            StartDate = new DateTimeOffset(startUtc),
+            EndDate = new DateTimeOffset(endUtc),
+            Color = Color,
+            Status = Status,
+            Priority = Priority,
+            IsRecurring = IsRecurring,
+            RecurrenceRule = RecurrenceRule
+        };
+
+        private static string FormatDuration(int blocks, bool useMin = false)
+        {
+            var totalMin = blocks * 15;
+            var h = totalMin / 60;
+
+            if (totalMin == 0) return "0";
+
+            if (totalMin % 60 == 0) return $"{h}ч";
+            else return string.Empty;
+
+        }
+    }
 }
