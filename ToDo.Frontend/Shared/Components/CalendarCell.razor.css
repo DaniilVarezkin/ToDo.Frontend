@@ -1,5 +1,10 @@
 ﻿.calendar-cell {
     transition: background-color 0.2s, transform 0.2s;
+    vertical-align: top;
+    padding: 8px;
+    height: 180px;
+    cursor: pointer;
+    position: relative;
 }
 
     .calendar-cell:hover {

@@ -1,11 +1,8 @@
 ﻿@using ToDo.Shared.Dto.TaskItems
 @inject NavigationManager Nav
 
-<td class="calendar-cell @(InMonth ? "" : "out-month") @(IsToday ? "today-cell" : "")"
-    style="vertical-align:top; padding:8px; height:140px; cursor:pointer; position:relative;"
-    @onclick='() => Nav.NavigateTo($"/tasks/day/{Date.ToString("yyyy-MM-dd")}")'>
+<td class="calendar-cell @CeilClassCss" @onclick='NavigateToDayTasksPage'>
 
-    @* Badge in top-right corner *@
     @if (Tasks.Count > 0)
     {
         <MudBadge Color="Color.Default"
@@ -14,9 +11,11 @@
     }
 
     <div class="d-flex justify-space-start align-items-center mb-2">
-        <MudText Typo="Typo.subtitle2" Class="m-0">@Date.Day</MudText>
+        <MudText Typo="Typo.subtitle2" Class="m-0">
+            @Date.Day
+        </MudText>
     </div>
-    <div style="overflow-y:auto; max-height:100px;">
+    <div style="overflow-y:auto; max-height:140px;">
         @foreach (var task in Tasks.Take(3))
         {
             <TaskChipComponent TaskItem="task" />
@@ -38,4 +37,10 @@
     private DateTime Date => DateOffset.DateTime;
     private bool InMonth => Date.Month == CurrentMonth.Month;
     private bool IsToday => Date.Date == DateTime.Today;
+
+    private string CeilClassCss => (InMonth ? "" : "out-month ") + (IsToday ? "today-cell" : "");
+
+    private void NavigateToDayTasksPage() {
+        Nav.NavigateTo($"/tasks/day/{Date.ToString("yyyy-MM-dd")}");
+    }
 }
