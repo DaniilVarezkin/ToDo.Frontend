@@ -6,6 +6,7 @@ using MudBlazor.Services;
 using Syncfusion.Blazor;
 using ToDo.Frontend;
 using ToDo.Frontend.Services.Auth;
+using ToDo.Frontend.Services.Statistic;
 using ToDo.Frontend.Services.TaskItems;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -35,6 +36,7 @@ builder.Services.AddScoped(sp =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskItemsService, TaskItemsService>();
+builder.Services.AddScoped<IStatisticService, StatisticService>();
 
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddMudServices();

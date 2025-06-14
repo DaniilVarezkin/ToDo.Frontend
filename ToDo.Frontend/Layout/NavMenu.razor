@@ -11,12 +11,7 @@
         <Authorized Context="authState">
             <MudNavGroup Title="@authState.User.FindFirst(c => c.Type == "email")?.Value"
                          Icon="@Icons.Material.Filled.AccountCircle"
-                         HideToggle="true">
-                <MudNavLink OnClick="@Logout"
-                            Icon="@Icons.Material.Filled.ExitToApp"
-                            DisableRipple="true">
-                    Выйти
-                </MudNavLink>
+                         Expanded="false">
             </MudNavGroup>
             <MudNavGroup Title="Задачи" Icon="@Icons.Material.Filled.List" Expanded="true">
                 <MudNavLink Href="tasks"
@@ -29,27 +24,34 @@
                             Icon="@Icons.Material.Filled.DateRange">
                     Календарь
                 </MudNavLink>
+                <MudNavLink Href="statistics"
+                            Match="NavLinkMatch.Prefix"
+                            Icon="@Icons.Material.Filled.Dashboard">
+                    Статистика
+                </MudNavLink>
                 <MudNavLink Href="tasks/form"
                             Match="NavLinkMatch.Prefix"
                             Icon="@Icons.Material.Filled.AddCircle">
                     Новая задача
                 </MudNavLink>
             </MudNavGroup>
+            <MudNavLink OnClick="@Logout"
+                        Icon="@Icons.Material.Filled.ExitToApp"
+                        DisableRipple="true">
+                Выйти
+            </MudNavLink>
         </Authorized>
-        <NotAuthorized>
-            <MudNavGroup Title="Гость" Icon="@Icons.Material.Filled.Person"
-                         HideToggle="true">
-                <MudNavLink Href="login"
-                            Match="NavLinkMatch.All"
-                            Icon="@Icons.Material.Filled.Login">
-                    Войти
-                </MudNavLink>
-                <MudNavLink Href="register"
-                            Match="NavLinkMatch.All"
-                            Icon="@Icons.Material.Filled.PersonAdd">
-                    Регистрация
-                </MudNavLink>
-            </MudNavGroup>
+        <NotAuthorized>                     
+            <MudNavLink Href="login"
+                        Match="NavLinkMatch.All"
+                        Icon="@Icons.Material.Filled.Login">
+                Войти
+            </MudNavLink>
+            <MudNavLink Href="register"
+                        Match="NavLinkMatch.All"
+                        Icon="@Icons.Material.Filled.PersonAdd">
+                Регистрация
+            </MudNavLink>
         </NotAuthorized>
     </AuthorizeView>
 
