@@ -1,6 +1,7 @@
 ﻿@page "/register"
 @attribute [AllowAnonymous]
 @using System.ComponentModel.DataAnnotations
+@using ToDo.Frontend.Common.Exceptions
 @inject IAuthService AuthService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
@@ -76,7 +77,8 @@
                            Variant="Variant.Filled"
                            Color="Color.Primary"
                            Disabled="!isValid || loading"
-                           Class="w-full">
+                           Class="w-full"
+                           OnClick="OnSubmit">
                     @if (loading)
                     {
                         <MudProgressCircular Size="Size.Small" Class="mr-2" Indeterminate="true" />
@@ -117,11 +119,13 @@
         }
     }
 
-    private async Task OnValidSubmit()
+    private async Task OnSubmit()
     {
+        Console.WriteLine("Регистрация...");
         await form.Validate();
         if (!isValid)
             return;
+
 
         loading = true;
         try
@@ -135,14 +139,18 @@
             Snackbar.Add("Регистрация успешна, войдите в систему", Severity.Success);
             Nav.NavigateTo("/login");
         }
+        catch (ServerException ex)
+        {
+            Snackbar.Add($"Ошибка регистрации: {ex.ProblemDetails?.Detail}", Severity.Error);
+        }
         catch (Exception ex)
         {
             Snackbar.Add($"Ошибка регистрации: {ex.Message}", Severity.Error);
         }
-        finally
-        {
-            loading = false;
-        }
+
+        Console.WriteLine("Конец регистрации...");
+        loading = false;
+        
     }
 
     private class RegisterModel
@@ -155,6 +163,8 @@
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Пароль обязателен")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z]).{6,}$", ErrorMessage =
+            "Пароль должен содержать минимум 6 символов, одну строчную и одну заглавную букву.")]
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Повторите пароль")]

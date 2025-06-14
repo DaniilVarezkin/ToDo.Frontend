@@ -2,6 +2,7 @@
 @attribute [AllowAnonymous]
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authorization
+@using ToDo.Frontend.Common.Exceptions
 
 @inject IAuthService AuthService
 @inject AuthenticationStateProvider AuthStateProvider
@@ -103,7 +104,6 @@
                 Email = model.Email,
                 Password = model.Password
             });
-
             ((CustomAuthStateProvider)AuthStateProvider).NotifyTokenChanged(token);
             Nav.NavigateTo("/", true);
         }
@@ -111,10 +111,7 @@
         {
             Snackbar.Add($"Ошибка входа: {ex.Message}", Severity.Error);
         }
-        finally
-        {
-            loading = false;
-        }
+        loading = false;
     }
 
     private class LoginModel
