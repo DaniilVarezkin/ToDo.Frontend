@@ -1,35 +1,27 @@
 @using ToDo.Shared.Dto.TaskItems
+@using ToDo.Shared.Enums
 @inject NavigationManager Nav
 
-<MudTooltip Text="@TaskItem.Title">
+<MudTooltip Text="@TaskItem.Title" Placement="Placement.Bottom">
     <MudChip T="string"
-             Size="Size.Small"
-             Class="mb-1 clickable"
-             Style="max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+        Size="Size.Small"
+             Class="task-chip"
+             Style="max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
              OnClick='() => Nav.NavigateTo($"/tasks/form/{TaskItem.Id}")'
-             Color="Color.Primary"
-             Variant="Variant.Filled">
-        @GetTaskDisplayText(TaskItem)
+             Color="@(TaskItem.Status.GetStatusMudColor())"
+             Variant="Variant.Text">
+        @GetDisplayText(TaskItem)
     </MudChip>
 </MudTooltip>
 
 @code {
     [Parameter] public TaskItemLookupDto TaskItem { get; set; } = null!;
 
-    private string GetTaskDisplayText(TaskItemLookupDto t)
+    private string GetDisplayText(TaskItemLookupDto t)
     {
-        var truncateTitle = Truncate(t.Title, 10);
-        if (t.IsAllDay)
-            return truncateTitle;
-
-        var time = t.StartDate.LocalDateTime.ToString("HH:mm");
-        return $"{time} {truncateTitle}";
-    }
-
-    private string Truncate(string value, int maxLength)
-    {
-        if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
-            return value;
-        return value.Substring(0, maxLength - 1) + "…";
+        var text = t.IsAllDay
+            ? t.Title
+            : t.StartDate.LocalDateTime.ToString("HH:mm") + " " + t.Title;
+        return text.Length > 15 ? text.Substring(0,12) + "…" : text;
     }
 }

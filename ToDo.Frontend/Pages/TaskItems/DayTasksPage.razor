@@ -1,0 +1,66 @@
+﻿@page "/tasks/day/{Date:datetime}"
+@attribute [Authorize]
+
+
+@using ToDo.Shared.Dto.Common
+@using ToDo.Shared.Dto.TaskItems
+@using MudBlazor
+@inject ITaskItemsService TaskItemsService
+@inject NavigationManager Nav
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Primary" OnClick='() => Nav.NavigateTo("/tasks/calendar")' />
+        <MudText Typo="Typo.h5">@Date.ToLocalTime().ToString("D")</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick='() => Nav.NavigateTo($"/tasks/form?date={Date:yyyy-MM-dd}")'>
+            Добавить задачу
+        </MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (!_tasks.Any())
+    {
+        <MudText Typo="Typo.subtitle1" Align="Align.Center">Задачи на этот день отсутствуют.</MudText>
+    }
+    else
+    {
+        <TaskTableComponent Tasks="_tasks" />
+    }
+</MudPaper>
+
+@code {
+    [Parameter]
+    public DateTime Date { get; set; }
+
+    private List<TaskItemLookupDto> _tasks = new();
+    private bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadTasksAsync();
+    }
+
+    private async Task LoadTasksAsync()
+    {
+        _loading = true;
+        var start = Date.Date;
+        var end = start.AddDays(1).AddTicks(-1);
+        var query = new GetTaskItemListQueryDto
+        {
+            Page = 1,
+            PageSize = 100,
+            DateFrom = new DateTimeOffset(start, TimeSpan.Zero),
+            DateTo = new DateTimeOffset(end, TimeSpan.Zero),
+            SortBy = nameof(TaskItemLookupDto.StartDate),
+            SortDescending = false
+        };
+
+        var result = await TaskItemsService.GetAllAsync(query);
+        _tasks = result.Items.ToList();
+        _loading = false;
+    }
+}

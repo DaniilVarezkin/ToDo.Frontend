@@ -1,0 +1,130 @@
+@using System
+@using System.Collections.Generic
+@using System.Threading
+@using System.Threading.Tasks
+@using MudBlazor
+@using ToDo.Shared.Dto.TaskItems
+@using ToDo.Shared.Enums
+
+@* Configurable TaskTableComponent *@
+<MudTable T="TaskItemLookupDto"
+          @ref="_table"
+          Items="Tasks"
+          ServerData="ServerData"
+          Elevated="false"
+          Dense="true"
+          Hover="true"
+          RowsPerPageOptions="new int[]{2,10,20}"
+          Loading="false"
+          LoadingProgressColor="Color.Transparent">
+    <HeaderContent>
+    <!-- Сортировка по StartDate -->
+    <MudTh>
+        <MudTableSortLabel T="TaskItemLookupDto" SortLabel="StartDate">Когда</MudTableSortLabel>
+    </MudTh>
+
+    <!-- Сортировка по Title -->
+    <MudTh>
+        <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Title">Задача</MudTableSortLabel>
+    </MudTh>
+
+    <!-- Сортировка по Status -->
+    <MudTh>
+        <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Status">Статус</MudTableSortLabel>
+    </MudTh>
+
+    <!-- Сортировка по Priority -->
+    <MudTh>
+        <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Priority">Приоритет</MudTableSortLabel>
+    </MudTh>
+
+    <!-- Колонки действий без сортировки -->
+    <MudTh></MudTh>
+    <MudTh></MudTh>
+</HeaderContent>
+
+    <RowTemplate Context="task">
+        <MudTd DataLabel="Когда">
+            @(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))
+        </MudTd>
+        <MudTd DataLabel="Задача">
+            <MudLink Href="@($"/tasks/form/{task.Id}")">
+                @task.Title
+            </MudLink>
+        </MudTd>
+        <MudTd DataLabel="Статус">
+            <MudChip T="string"
+                     Color="@task.Status.GetStatusMudColor()"
+                     Size="Size.Small"
+                    Variant="Variant.Text">
+                @task.Status
+            </MudChip>
+        </MudTd>
+        <MudTd DataLabel="Приоритет">
+            <MudChip T="string"
+                     Color="@task.Priority.GetPriorityMudColor()"
+                     Size="Size.Small"
+                     Variant="Variant.Text">
+                @task.Priority
+            </MudChip>
+        </MudTd>
+        @if (ShowActionsColumn)
+        {
+            <MudTd DataLabel="Действие">
+                @if (task.Status != UserTaskStatus.Done)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                   Color="Color.Success"
+                                   Size="Size.Small"
+                                   OnClick="() => OnComplete.InvokeAsync(task.Id)" />
+                }
+                else
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Undo"
+                                   Color="Color.Info"
+                                   Size="Size.Small"
+                                   OnClick="() => OnReopen.InvokeAsync(task.Id)" />
+                }
+            </MudTd>
+            <MudTd DataLabel="Перейти">
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               OnClick='() => Nav.NavigateTo($"/tasks/form/{task.Id}")' />
+            </MudTd>
+        }
+    </RowTemplate>
+
+    <PagerContent>
+        <MudTablePager HideRowsPerPage="true"
+                       HidePageNumber="true"
+                       HorizontalAlignment="HorizontalAlignment.Center" />
+    </PagerContent>
+
+</MudTable>
+
+@code {
+    private MudTable<TaskItemLookupDto>? _table;
+
+    /// <summary>Статические данные (для client-side)</summary>
+    [Parameter] public IEnumerable<TaskItemLookupDto>? Tasks { get; set; }
+
+    /// <summary>Функция загрузки серверных данных</summary>
+    [Parameter] public Func<TableState, CancellationToken, Task<TableData<TaskItemLookupDto>>>? ServerData { get; set; }
+
+    /// <summary>Показывать колонку действий</summary>
+    [Parameter] public bool ShowActionsColumn { get; set; } = false;
+
+    /// <summary>Событие: отметить выполненной</summary>
+    [Parameter] public EventCallback<Guid> OnComplete { get; set; }
+    /// <summary>Событие: переоткрыть задачу</summary>
+    [Parameter] public EventCallback<Guid> OnReopen { get; set; }
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    /// <summary>Перезагрузить данные в таблице</summary>
+    public Task ReloadServerDataAsync() =>
+        _table is not null
+            ? _table.ReloadServerData()
+            : Task.CompletedTask;
+}
