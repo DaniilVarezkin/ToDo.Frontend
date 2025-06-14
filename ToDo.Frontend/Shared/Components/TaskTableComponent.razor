@@ -6,52 +6,46 @@
 @using ToDo.Shared.Dto.TaskItems
 @using ToDo.Shared.Enums
 
-@* Configurable TaskTableComponent *@
+@* Configurable TaskTableComponent с навигацией по клику на строку *@
 <MudTable T="TaskItemLookupDto"
           @ref="_table"
-          Items="Tasks"
           ServerData="ServerData"
           Dense="true"
           Hover="true"
+          RowClass="cursor-pointer"
+          OnRowClick="RowClickEvent"
           Loading="false"
           LoadingProgressColor="Color.Transparent"
           RowsPerPage="10">
     <HeaderContent>
-
-    <MudTh>
-        <MudTableSortLabel T="TaskItemLookupDto" SortLabel="StartDate">Когда</MudTableSortLabel>
-    </MudTh>
-
-    <MudTh>
-        <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Title">Задача</MudTableSortLabel>
-    </MudTh>
-
-    <MudTh>
-        <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Status">Статус</MudTableSortLabel>
-    </MudTh>
-
-    <MudTh>
-        <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Priority">Приоритет</MudTableSortLabel>
-    </MudTh>
-
-    <MudTh></MudTh>
-    <MudTh></MudTh>
-</HeaderContent>
+        <MudTh>
+            <MudTableSortLabel T="TaskItemLookupDto" SortLabel="StartDate">Когда</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Title">Задача</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Status">Статус</MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Priority">Приоритет</MudTableSortLabel>
+        </MudTh>
+        <MudTh></MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
 
     <RowTemplate Context="task">
         <MudTd DataLabel="Когда">
             @(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))
         </MudTd>
         <MudTd DataLabel="Задача">
-            <MudLink Href="@($"/tasks/form/{task.Id}")">
-                @task.Title
-            </MudLink>
+            @task.Title
         </MudTd>
         <MudTd DataLabel="Статус">
             <MudChip T="string"
                      Color="@task.Status.GetStatusMudColor()"
                      Size="Size.Small"
-                    Variant="Variant.Text">
+                     Variant="Variant.Text">
                 @task.Status
             </MudChip>
         </MudTd>
@@ -81,12 +75,6 @@
                                    OnClick="() => OnReopen.InvokeAsync(task.Id)" />
                 }
             </MudTd>
-            <MudTd DataLabel="Перейти">
-                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                               Color="Color.Primary"
-                               Size="Size.Small"
-                               OnClick='() => Nav.NavigateTo($"/tasks/form/{task.Id}")' />
-            </MudTd>
             <MudTd DataLabel="Удалить">
                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                Color="Color.Error"
@@ -96,23 +84,19 @@
         }
     </RowTemplate>
 
-        <PagerContent>
+    <PagerContent>
         @if (!HidePagination)
         {
             <MudTablePager HideRowsPerPage="true"
-                           HidePageNumber="true"
                            HorizontalAlignment="HorizontalAlignment.Center" />
         }
     </PagerContent>
-   
-
 </MudTable>
 
 @code {
     private MudTable<TaskItemLookupDto>? _table;
 
     [Parameter] public bool HidePagination { get; set; } = false;
-    [Parameter] public IEnumerable<TaskItemLookupDto>? Tasks { get; set; }
     [Parameter] public Func<TableState, CancellationToken, Task<TableData<TaskItemLookupDto>>>? ServerData { get; set; }
     [Parameter] public bool ShowActionsColumn { get; set; } = false;
     [Parameter] public EventCallback<Guid> OnComplete { get; set; }
@@ -126,4 +110,9 @@
         _table is not null
             ? _table.ReloadServerData()
             : Task.CompletedTask;
+
+    private void RowClickEvent(TableRowClickEventArgs<TaskItemLookupDto> args)
+    {
+        Nav.NavigateTo($"/tasks/form/{args.Item.Id}");
+    }
 }
