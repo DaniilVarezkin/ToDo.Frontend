@@ -4,34 +4,29 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
 
-<MudNavMenu Class="px-2">
+<MudNavMenu Class="px-2" Rounded="true">
 
     <!-- Блок авторизации -->
     <AuthorizeView>
         <Authorized Context="authState">
-            <MudNavGroup Title="@authState.User.FindFirst(c => c.Type == "email")?.Value"
-                         Icon="@Icons.Material.Filled.AccountCircle"
-                         Expanded="false">
-            </MudNavGroup>
-            <MudNavGroup Title="Задачи" Icon="@Icons.Material.Filled.List" Expanded="true">
+            <MudNavLink  Icon="@Icons.Material.Filled.AccountCircle">
+                @authState.User.FindFirst(c => c.Type == "email")?.Value
+            </MudNavLink>
+            <MudNavGroup Title="Задачи" Icon="@Icons.Material.Filled.List" Expanded="true" >
                 <MudNavLink Href="tasks"
-                            Match="NavLinkMatch.Prefix"
-                            Icon="@Icons.Material.Filled.ListAlt">
+                            Match="NavLinkMatch.All">
                     Список задач
                 </MudNavLink>
                 <MudNavLink Href="tasks/calendar"
-                            Match="NavLinkMatch.Prefix"
-                            Icon="@Icons.Material.Filled.DateRange">
+                            Match="NavLinkMatch.All">
                     Календарь
                 </MudNavLink>
                 <MudNavLink Href="statistics"
-                            Match="NavLinkMatch.Prefix"
-                            Icon="@Icons.Material.Filled.Dashboard">
+                            Match="NavLinkMatch.All">
                     Статистика
                 </MudNavLink>
                 <MudNavLink Href="tasks/form"
-                            Match="NavLinkMatch.Prefix"
-                            Icon="@Icons.Material.Filled.AddCircle">
+                            Match="NavLinkMatch.All">
                     Новая задача
                 </MudNavLink>
             </MudNavGroup>
@@ -43,13 +38,11 @@
         </Authorized>
         <NotAuthorized>                     
             <MudNavLink Href="login"
-                        Match="NavLinkMatch.All"
-                        Icon="@Icons.Material.Filled.Login">
+                        Match="NavLinkMatch.All">
                 Войти
             </MudNavLink>
             <MudNavLink Href="register"
-                        Match="NavLinkMatch.All"
-                        Icon="@Icons.Material.Filled.PersonAdd">
+                        Match="NavLinkMatch.All">
                 Регистрация
             </MudNavLink>
         </NotAuthorized>

@@ -78,6 +78,7 @@
                         Длительность: @(_viewModel.DurationLabel == "0" ? "Мгновенно" :_viewModel.DurationLabel)
                     </MudText>
                     <MudSlider T="int"
+                        Size="Size.Medium"
                                @bind-Value="_viewModel.DurationBlocks"
                                Min="0" Max="16" Step="1"
                                TickMarks="true"
