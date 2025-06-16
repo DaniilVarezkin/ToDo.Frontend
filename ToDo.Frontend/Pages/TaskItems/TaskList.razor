@@ -10,7 +10,7 @@
 @inject IDialogService DialogService
 
 <MudPaper Class="pa-4">
-    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.End" Class="mb-4">
         <MudTabs ActivePanelIndex="_activeFilter"
                  ActivePanelIndexChanged="OnFilterChanged"
                  Rounded="true">
@@ -24,7 +24,13 @@
                       Placeholder="Поиск..."
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search"
-                      Class="ml-auto"/>
+                      Class="ml-auto mx-1"
+                      Variant="Variant.Text"/>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick='() => Nav.NavigateTo($"/tasks/form")'>
+            Добавить задачу
+        </MudButton>
     </MudStack>
 
     <TaskTableComponent @ref="_taskTable"

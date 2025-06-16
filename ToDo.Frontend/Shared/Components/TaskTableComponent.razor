@@ -17,37 +17,33 @@
           RowsPerPage="10"
           Elevation="0" Bordered="false" OnRowMouseEnter="OnRowMouseEnter" OnRowMouseLeave="OnRowMouseLeave">
     <HeaderContent>
-        <MudTh></MudTh>
         <MudTh>
-            <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Title">Задача</MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Status">Статус</MudTableSortLabel>
+            <MudStack Row="true" Style="width: 100%;">
+                <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Status">Статус</MudTableSortLabel>
+                <MudSpacer />
+                <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Title">Задача</MudTableSortLabel>
+                <MudSpacer />
+
+            </MudStack>
         </MudTh>
         <MudTh>
             <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Priority">Приоритет</MudTableSortLabel>
         </MudTh>
-        <MudTh></MudTh>
-        <MudTh></MudTh>
+        <MudTh Style="width:4rem;"></MudTh>
     </HeaderContent>
 
     <RowTemplate Context="task">
-        <MudTd Style="vertical-align: top;">
-            <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Todo"
-                                      OnCheck="() => OnComplete.InvokeAsync(task.Id)"
-                                      OnUndo="() => OnReopen.InvokeAsync(task.Id)" />
-        </MudTd >
-        <MudTd DataLabel="Задача" Style="vertical-align: top;">
-            <TaskTitleComponent Title="@task.Title" 
-                                SubTitle="@(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))" />
-        </MudTd>
-        <MudTd DataLabel="Статус">
-            <MudChip T="string"
-                     Color="@task.Status.GetStatusMudColor()"
-                     Size="Size.Small"
-                     Variant="Variant.Text">
-                @task.Status
-            </MudChip>
+
+        <MudTd DataLabel="Задача" >
+            <MudStack Row="true" AlignItems="AlignItems.Start" Style="vertical-align: top; padding-left: 5px;">
+                <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Todo"
+                                          OnCheck="() => OnComplete.InvokeAsync(task.Id)"
+                                          OnUndo="() => OnReopen.InvokeAsync(task.Id)" />
+                <TaskTitleComponent Title="@task.Title"
+                                    SubTitle="@(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))" 
+                                    IsComplete="task.Status == UserTaskStatus.Done" />
+
+            </MudStack>
         </MudTd>
         <MudTd DataLabel="Приоритет">
             <MudChip T="string"
@@ -58,13 +54,14 @@
             </MudChip>
         </MudTd>
 
-        <MudTd>
+        <MudTd >
             @if (_currenHoverRowTaskId.HasValue && _currenHoverRowTaskId == task.Id)
             {
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                   Color="Color.Error"
+                    <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                   Color="Color.Default"
                                    Size="Size.Small"
-                                   OnClick="() => OnDelete.InvokeAsync(task.Id)" />
+                                   OnClick="() => OnDelete.InvokeAsync(task.Id)"/>
+                    
             }
         </MudTd>
     </RowTemplate>

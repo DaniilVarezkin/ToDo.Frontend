@@ -8,17 +8,19 @@
 
 @if (IsCheck)
 {
+    
+    <MudIconButton Icon="@Icons.Material.Outlined.CheckCircleOutline"
+                   Color="Color.Default"
+                   Size="Size.Small"
+                   OnClick="OnUndo" 
+                   Class="opacity-50"/>
+}
+else
+{
     <MudIconButton Icon="@Icons.Material.Outlined.Circle"
                    Color="Color.Success"
                    Size="Size.Small"
                    OnClick="OnCheck" />
-}
-else
-{
-    <MudIconButton Icon="@Icons.Material.Outlined.CheckCircleOutline"
-                   Color="Color.Default"
-                   Size="Size.Small"
-                   OnClick="OnUndo" />
 }
 @code {
     [Parameter] public bool IsCheck { get; set; }

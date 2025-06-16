@@ -1,13 +1,14 @@
 <MudStack Row="false" Spacing="0"> 
-    <MudText Typo="Typo.subtitle2">
+    <MudText Typo="Typo.body1" Class="@(IsComplete ? "text-decoration-line-through opacity-50" : "")">
         @Title
     </MudText>
-    <MudText Typo="Typo.caption">
+    <MudText Typo="Typo.subtitle2" Class="@(IsComplete ? "opacity-50" : "")" Inline="false">
         @SubTitle
     </MudText>
 </MudStack>
 
 @code {
+    [Parameter] public bool IsComplete { get; set; }
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public string SubTitle { get; set; } = string.Empty;
 }
