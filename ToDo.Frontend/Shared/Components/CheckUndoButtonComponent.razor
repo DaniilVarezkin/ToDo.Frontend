@@ -1,0 +1,27 @@
+@using System
+@using System.Collections.Generic
+@using System.Threading
+@using System.Threading.Tasks
+@using MudBlazor
+@using ToDo.Shared.Dto.TaskItems
+@using ToDo.Shared.Enums
+
+@if (IsCheck)
+{
+    <MudIconButton Icon="@Icons.Material.Outlined.Circle"
+                   Color="Color.Success"
+                   Size="Size.Small"
+                   OnClick="OnCheck" />
+}
+else
+{
+    <MudIconButton Icon="@Icons.Material.Outlined.CheckCircleOutline"
+                   Color="Color.Default"
+                   Size="Size.Small"
+                   OnClick="OnUndo" />
+}
+@code {
+    [Parameter] public bool IsCheck { get; set; }
+    [Parameter] public EventCallback OnCheck {get; set; }
+    [Parameter] public EventCallback OnUndo {get; set; }
+}

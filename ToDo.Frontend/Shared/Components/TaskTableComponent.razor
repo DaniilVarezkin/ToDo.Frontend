@@ -18,6 +18,7 @@
           LoadingProgressColor="Color.Transparent"
           RowsPerPage="10">
     <HeaderContent>
+        <MudTh></MudTh>
         <MudTh>
             <MudTableSortLabel T="TaskItemLookupDto" SortLabel="StartDate">Когда</MudTableSortLabel>
         </MudTh>
@@ -35,6 +36,12 @@
     </HeaderContent>
 
     <RowTemplate Context="task">
+        <MudTd>
+            <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Todo"
+                                      OnCheck="() => OnComplete.InvokeAsync(task.Id)"
+                                      OnUndo="() => OnReopen.InvokeAsync(task.Id)" />
+        </MudTd>
+
         <MudTd DataLabel="Когда">
             @(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))
         </MudTd>
@@ -59,22 +66,7 @@
         </MudTd>
         @if (ShowActionsColumn)
         {
-            <MudTd DataLabel="Действие">
-                @if (task.Status != UserTaskStatus.Done)
-                {
-                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
-                                   Color="Color.Success"
-                                   Size="Size.Small"
-                                   OnClick="() => OnComplete.InvokeAsync(task.Id)" />
-                }
-                else
-                {
-                    <MudIconButton Icon="@Icons.Material.Filled.Undo"
-                                   Color="Color.Info"
-                                   Size="Size.Small"
-                                   OnClick="() => OnReopen.InvokeAsync(task.Id)" />
-                }
-            </MudTd>
+
             <MudTd DataLabel="Удалить">
                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                Color="Color.Error"
