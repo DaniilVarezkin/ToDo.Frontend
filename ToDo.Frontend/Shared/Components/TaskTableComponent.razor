@@ -6,22 +6,18 @@
 @using ToDo.Shared.Dto.TaskItems
 @using ToDo.Shared.Enums
 
-@* Configurable TaskTableComponent с навигацией по клику на строку *@
 <MudTable T="TaskItemLookupDto"
           @ref="_table"
           ServerData="ServerData"
           Dense="true"
-          Hover="true"
+          Hover="false"
           RowClass="cursor-pointer"
           OnRowClick="RowClickEvent"
           Loading="false"
-          LoadingProgressColor="Color.Transparent"
-          RowsPerPage="10">
+          RowsPerPage="10"
+          Elevation="0" Bordered="false" OnRowMouseEnter="OnRowMouseEnter" OnRowMouseLeave="OnRowMouseLeave">
     <HeaderContent>
         <MudTh></MudTh>
-        <MudTh>
-            <MudTableSortLabel T="TaskItemLookupDto" SortLabel="StartDate">Когда</MudTableSortLabel>
-        </MudTh>
         <MudTh>
             <MudTableSortLabel T="TaskItemLookupDto" SortLabel="Title">Задача</MudTableSortLabel>
         </MudTh>
@@ -36,17 +32,14 @@
     </HeaderContent>
 
     <RowTemplate Context="task">
-        <MudTd>
+        <MudTd Style="vertical-align: top;">
             <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Todo"
                                       OnCheck="() => OnComplete.InvokeAsync(task.Id)"
                                       OnUndo="() => OnReopen.InvokeAsync(task.Id)" />
-        </MudTd>
-
-        <MudTd DataLabel="Когда">
-            @(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))
-        </MudTd>
-        <MudTd DataLabel="Задача">
-            @task.Title
+        </MudTd >
+        <MudTd DataLabel="Задача" Style="vertical-align: top;">
+            <TaskTitleComponent Title="@task.Title" 
+                                SubTitle="@(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))" />
         </MudTd>
         <MudTd DataLabel="Статус">
             <MudChip T="string"
@@ -64,16 +57,16 @@
                 @task.Priority
             </MudChip>
         </MudTd>
-        @if (ShowActionsColumn)
-        {
 
-            <MudTd DataLabel="Удалить">
-                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                               Color="Color.Error"
-                               Size="Size.Small"
-                               OnClick="() => OnDelete.InvokeAsync(task.Id)" />
-            </MudTd>
-        }
+        <MudTd>
+            @if (_currenHoverRowTaskId.HasValue && _currenHoverRowTaskId == task.Id)
+            {
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   OnClick="() => OnDelete.InvokeAsync(task.Id)" />
+            }
+        </MudTd>
     </RowTemplate>
 
     <PagerContent>
@@ -87,6 +80,7 @@
 
 @code {
     private MudTable<TaskItemLookupDto>? _table;
+    private Guid? _currenHoverRowTaskId = null;
 
     [Parameter] public bool HidePagination { get; set; } = false;
     [Parameter] public Func<TableState, CancellationToken, Task<TableData<TaskItemLookupDto>>>? ServerData { get; set; }
@@ -106,5 +100,14 @@
     private void RowClickEvent(TableRowClickEventArgs<TaskItemLookupDto> args)
     {
         Nav.NavigateTo($"/tasks/form/{args.Item.Id}");
+    }
+    private void OnRowMouseEnter(TableRowHoverEventArgs<TaskItemLookupDto> args)
+    {
+        _currenHoverRowTaskId = args.Item?.Id;
+
+    }
+    private void OnRowMouseLeave(TableRowHoverEventArgs<TaskItemLookupDto> args)
+    {
+        _currenHoverRowTaskId = null;
     }
 }

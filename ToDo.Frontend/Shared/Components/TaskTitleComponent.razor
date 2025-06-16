@@ -1,0 +1,13 @@
+<MudStack Row="false" Spacing="0"> 
+    <MudText Typo="Typo.subtitle2">
+        @Title
+    </MudText>
+    <MudText Typo="Typo.caption">
+        @SubTitle
+    </MudText>
+</MudStack>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string SubTitle { get; set; } = string.Empty;
+}
