@@ -16,6 +16,7 @@ namespace ToDo.Frontend.Pages.TaskItems
         [Inject] ITaskItemsService TaskItemsService { get; set; }
 
         [Parameter] public Guid? Id { get; set; }
+        [Parameter] public DateTime? Date { get; set; }
 
         protected MudForm _form = null!;
         protected TaskFormModel _model = new();
@@ -34,19 +35,24 @@ namespace ToDo.Frontend.Pages.TaskItems
                 }
                 _model = new TaskFormModel(dto);
             }
+            else if (Date.HasValue)
+            {
+                Console.WriteLine("-----------");
+                _model.StartDate = Date;
+            }
             else
             {
-                // Создание — сразу заполняем все нужные поля
                 _model.StartDate = DateTime.Today;
-                _model.StartTime = TimeSpan.FromHours(9);
-
-                // Вычисляем конец задачи, чтобы EndDate/EndTime были не null
-                var start = _model.StartDate.Value.Date + _model.StartTime.Value;
-                var end = start.AddMinutes(_model.DurationMinutes);
-                _model.EndDate = end.Date;
-                _model.EndTime = end.TimeOfDay;
-
             }
+
+            _model.StartTime = TimeSpan.FromHours(9);
+
+            var start = _model.StartDate.Value.Date + _model.StartTime.Value;
+            var end = start.AddMinutes(_model.DurationMinutes);
+            _model.EndDate = end.Date;
+            _model.EndTime = end.TimeOfDay;
+
+            
 
             // И только теперь безопасно создаём DateRange
             if (_model.StartDate.HasValue && _model.EndDate.HasValue)

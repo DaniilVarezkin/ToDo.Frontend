@@ -39,7 +39,7 @@
 
         <MudTd DataLabel="Задача" >
             <MudStack Row="true" AlignItems="AlignItems.Start" Style="vertical-align: top; padding-left: 5px;">
-                <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Todo"
+                <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Done"
                                           OnCheck="() => OnComplete.InvokeAsync(task.Id)"
                                           OnUndo="() => OnReopen.InvokeAsync(task.Id)" />
                 <TaskTitleComponent Title="@task.Title"
@@ -64,10 +64,6 @@
                                 Color="Color.Default"
                                 Size="Size.Small"
                                 OnClick="() => OnDelete.InvokeAsync(task.Id)"/>
-                <MudIconButton Icon="@Icons.Material.Outlined.Edit"
-                               Color="Color.Default"
-                               Size="Size.Small"
-                               OnClick="() => OnEditTask(task.Id)" />
             }
         </MudTd>
     </RowTemplate>
@@ -113,25 +109,25 @@
     {
         _currenHoverRowTaskId = null;
     }
-    private async Task OnEdit()
-    {
-        Console.WriteLine("OnEdit");
-    }
+    // private async Task OnEdit()
+    // {
+    //     Console.WriteLine("OnEdit");
+    // }
 
-    private async Task OnEditTask(Guid id)
-    {
-        var parameters = new DialogParameters<EditDialogWindowComponent>
-        {
-            { x => x.ContentText, "Редактирование задачи" },
-            { x => x.ButtonText, "Сохранить" },
-            { x => x.Color, Color.Primary },
-            { x => x.OnSubmit, OnEdit},
-            { x => x.Id, id},
-        };
+    // private async Task OnEditTask(Guid id)
+    // {
+    //     var parameters = new DialogParameters<EditDialogWindowComponent>
+    //     {
+    //         { x => x.ContentText, "Редактирование задачи" },
+    //         { x => x.ButtonText, "Сохранить" },
+    //         { x => x.Color, Color.Primary },
+    //         { x => x.OnSubmit, OnEdit},
+    //         { x => x.Id, id},
+    //     };
 
-        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Medium };
+    //     var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Medium };
 
-        var dialog = await DialogService.ShowAsync<EditDialogWindowComponent>("Delete", parameters, options);
-        var result = await dialog.Result;
-    }
+    //     var dialog = await DialogService.ShowAsync<EditDialogWindowComponent>("Delete", parameters, options);
+    //     var result = await dialog.Result;
+    // }
 }
