@@ -5,6 +5,9 @@
 @using MudBlazor
 @using ToDo.Shared.Dto.TaskItems
 @using ToDo.Shared.Enums
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
 
 <MudTable T="TaskItemLookupDto"
           @ref="_table"
@@ -57,11 +60,14 @@
         <MudTd >
             @if (_currenHoverRowTaskId.HasValue && _currenHoverRowTaskId == task.Id)
             {
-                    <MudIconButton Icon="@Icons.Material.Outlined.Delete"
-                                   Color="Color.Default"
-                                   Size="Size.Small"
-                                   OnClick="() => OnDelete.InvokeAsync(task.Id)"/>
-                    
+                <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                Color="Color.Default"
+                                Size="Size.Small"
+                                OnClick="() => OnDelete.InvokeAsync(task.Id)"/>
+                <MudIconButton Icon="@Icons.Material.Outlined.Edit"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               OnClick="() => OnEditTask(task.Id)" />
             }
         </MudTd>
     </RowTemplate>
@@ -106,5 +112,26 @@
     private void OnRowMouseLeave(TableRowHoverEventArgs<TaskItemLookupDto> args)
     {
         _currenHoverRowTaskId = null;
+    }
+    private async Task OnEdit()
+    {
+        Console.WriteLine("OnEdit");
+    }
+
+    private async Task OnEditTask(Guid id)
+    {
+        var parameters = new DialogParameters<EditDialogWindow>
+        {
+            { x => x.ContentText, "Редактирование задачи" },
+            { x => x.ButtonText, "Сохранить" },
+            { x => x.Color, Color.Primary },
+            { x => x.OnSubmit, OnEdit},
+            { x => x.Id, id},
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Medium };
+
+        var dialog = await DialogService.ShowAsync<EditDialogWindow>("Delete", parameters, options);
+        var result = await dialog.Result;
     }
 }

@@ -1,20 +1,20 @@
-﻿@page "/tasks/form"
-@page "/tasks/form/{Id:guid}"
-@attribute [Authorize]
-
+﻿@using ToDo.Frontend.Pages.TaskItems
 @using Microsoft.AspNetCore.Mvc
 @using MudBlazor
 @using ToDo.Frontend.Common.Exceptions
 @using ToDo.Shared.Dto.TaskItems
 @using ToDo.Shared.Enums
 @inject ITaskItemsService TaskItemsService
-@inject NavigationManager Nav
 @inject ISnackbar Snackbar
 
-<MudPaper Class="pa-6 mx-auto" Style="max-width:800px;">
-    <MudForm @ref="_form">
+<MudDialog>
+    <TitleContent>
+        @ContentText
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+
         <MudGrid Spacing="3">
-            <!-- Заголовок -->
             <MudItem xs="12">
                 <MudTextField T="string"
                               @bind-Value="_viewModel.Title"
@@ -30,7 +30,6 @@
 
 
 
-            <!-- «Весь день» + диапазон дат -->
             <MudItem xs="12" >
                 <MudCheckBox T="bool"
                              Color="Color.Primary"
@@ -53,40 +52,36 @@
                 <!-- Время начала / окончания -->
                 <MudItem xs="12" sm="3">
                     <MudTimePicker T="TimeSpan?"
+                                   @bind-Time="_viewModel.StartTime"
                                    Label="Время начала"
                                    Variant="Variant.Outlined"
                                    Required="true"
                                    RequiredError="Укажите время начала"
-                                   Style="width:100%;" 
-                                   Time="_viewModel.StartTime"
-                                   TimeChanged="_viewModel.OnStartTimeChanged"/>
+                                   Style="width:100%;" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     <MudTimePicker T="TimeSpan?"
+                                   @bind-Time="_viewModel.EndTime"
                                    Label="Время окончания"
                                    Variant="Variant.Outlined"
                                    Required="true"
                                    RequiredError="Укажите время окончания"
                                    Style="width:100%;"
                                    ImmediateText="true"
-                                   Time="_viewModel.EndTime"
-                                   TimeChanged="_viewModel.OnEndTimeChanged"
-                                   Validation="(TimeSpan? time) => ValidateEndTime(time)"/>
+                                   Validation="(TimeSpan? time) => _viewModel.ValidateEndTime(time)"/>
                 </MudItem>
 
-                <!-- Слайдер длительности -->
                 <MudItem xs="12" Class="mx-3 mb-2">
                     <MudText Typo="Typo.body2">
-                        Длительность: @_viewModel.DurationLabel
+                        Длительность: @(_viewModel.DurationLabel == "0" ? "Мгновенно" :_viewModel.DurationLabel)
                     </MudText>
-                    <MudSlider  T="int"
-                                Size="Size.Medium"
-                                Min="0" Max="60 * 5" Step="15"
-                                TickMarks="true"
-                                Class="mt-1" 
-                                TickMarkLabels="@_viewModel.DurationMarks"
-                                Value="_viewModel.DurationMinutes"
-                                ValueChanged="_viewModel.OnDurationMinutesChanged"/>
+                    <MudSlider T="int"
+                        Size="Size.Medium"
+                               @bind-Value="_viewModel.DurationBlocks"
+                               Min="0" Max="16" Step="1"
+                               TickMarks="true"
+                               TickMarkLabels="@_viewModel.DurationMarks"
+                               Class="mt-1" />
                 </MudItem>
             }
             <MudFlexBreak />
@@ -115,6 +110,7 @@
                 </MudSelect>
             </MudItem>
 
+                        <!-- Описание -->
             <MudItem xs="12">
                 <MudTextField T="string"
                               @bind-Value="_viewModel.Description"
@@ -132,20 +128,42 @@
                 <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               OnClick="@SubmitAsync">
+                               OnClick="@Submit">
                         @(Id.HasValue ? "Сохранить" : "Создать")
                     </MudButton>
                     <MudButton Variant="Variant.Outlined"
-                               OnClick='() => Nav.NavigateTo("/tasks")'>
+                               OnClick='Cancel'>
                         Отмена
                     </MudButton>
                 </MudStack>
             </MudItem>
         </MudGrid>
     </MudForm>
-</MudPaper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Отмена</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">@ButtonText</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string ContentText { get; set; }
+
+    [Parameter]
+    public string ButtonText { get; set; }
+
+    [Parameter]
+    public Color Color { get; set; }
+
+    //Параметры для задачи
+
+    [Parameter]
+    public Func<Task> OnSubmit { get; set; }
+
     [Parameter] public Guid? Id { get; set; }
 
     private MudForm _form = null!;
@@ -160,24 +178,22 @@
             if (dto == null)
             {
                 Snackbar.Add("Задача не найдена", Severity.Error);
-                Nav.NavigateTo("/tasks");
+                Cancel();
                 return;
             }
             _viewModel = new TaskFormViewModel(dto);
         }
         else
         {
-            // Создание — сразу заполняем все нужные поля
             _viewModel.StartDate      = DateTime.Today;
             _viewModel.StartTime      = TimeSpan.FromHours(9);
             _viewModel.DurationBlocks = 4; // 1 час
 
             // Вычисляем конец задачи, чтобы EndDate/EndTime были не null
             var start = _viewModel.StartDate.Value.Date + _viewModel.StartTime.Value;
-            var end   = start.AddMinutes(_viewModel.DurationMinutes);
+            var end   = start.AddMinutes(_viewModel.DurationBlocks * 15);
             _viewModel.EndDate = end.Date;
             _viewModel.EndTime = end.TimeOfDay;
-
         }
 
         // И только теперь безопасно создаём DateRange
@@ -188,86 +204,22 @@
             );
     }
 
-    private async Task SubmitAsync()
-    {
-        await _form.Validate();
-        if (!_form.IsValid) return;
-
-        var startLocal = _viewModel.StartDate!.Value.Date + _viewModel.StartTime!.Value;
-        var endLocal   = _viewModel.EndDate!.Value.Date   + _viewModel.EndTime!.Value;
-        var startUtc   = DateTime.SpecifyKind(startLocal, DateTimeKind.Utc);
-        var endUtc     = DateTime.SpecifyKind(endLocal,   DateTimeKind.Utc);
-
-        if (_viewModel.Id.HasValue)
+    private void Submit() {
+        if(true)
         {
-            var upd = _viewModel.ToUpdateDto(startUtc, endUtc);
-            try
-            {
-                await TaskItemsService.UpdateAsync(upd);
-                Snackbar.Add("Задача успешно обновлена", Severity.Success);
-                Nav.NavigateTo("/tasks");
-            }
-            catch(ServerException ex)
-            {
-
-                if(ex.ProblemDetails is ValidationProblemDetails pd)
-                {
-                    pd.Errors.Select(pair =>
-                    {
-                        Snackbar.Add($"Ошибка {pair.Key}: {string.Join(", ", pair.Value)}", Severity.Error);
-                        return ";";
-                    });
-                }
-                Snackbar.Add($"Ошибка при сохранении: {ex.Message}", Severity.Error);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add($"Ошибка при сохранении: {ex.Message}", Severity.Error);
-            }
+            OnSubmit();
+            MudDialog.Close(DialogResult.Ok(true));
         }
-        else
-        {
-            var cr = _viewModel.ToCreateDto(startUtc, endUtc);
-            try
-            {
-                await TaskItemsService.CreateAsync(cr);
-                Snackbar.Add("Задача успешно создана", Severity.Success);
-                Nav.NavigateTo("/tasks");
-            }
-            catch(ServerException ex)
-            {
-
-                if(ex.ProblemDetails is ValidationProblemDetails pd)
-                {
-                    pd.Errors.Select(pair =>
-                    {
-                        Snackbar.Add($"Ошибка {pair.Key}: {string.Join(", ", pair.Value)}", Severity.Error);
-                        return ";";
-                    });
-                }
-                Snackbar.Add($"Ошибка при создании1: {ex.Message}", Severity.Error);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add($"Ошибка при создании2: {ex.Message}", Severity.Error);
-            }
-        }
+        
     }
 
-    private void OnIsAllDayChanged(bool value)
+    private void Cancel() => MudDialog.Cancel();
+
+
+        private void OnIsAllDayChanged(bool value)
     {
          _viewModel.IsAllDay = value;
     }
 
-    private string? ValidateEndTime(TimeSpan? endTime)
-    {
-        if (endTime == null)
-            return "Укажите время окончания";
 
-        var start  = _viewModel.StartDate!.Value.Date + _viewModel.StartTime!.Value;
-        var finish = _viewModel.EndDate!.Value.Date   + endTime.Value;
-        return finish < start
-            ? "Конечное время должно быть позже или равно начальному"
-            : null;
-    }
-} 
+}

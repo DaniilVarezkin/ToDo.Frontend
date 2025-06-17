@@ -31,6 +31,12 @@ namespace ToDo.Frontend.Pages.TaskItems
         public DateRange? DateRange { get; set; }
 
         private int _durationBlocks = 4;
+
+        public const int MaxSliderMinutes = 60 * 5;
+
+        public int DurationMinutes { get; set; } = 60;
+
+
         [Required]
         public int DurationBlocks
         {
@@ -43,11 +49,11 @@ namespace ToDo.Frontend.Pages.TaskItems
             }
         }
 
-        public string DurationLabel => FormatDuration(_durationBlocks, true);
+        public string DurationLabel => FormatDuration(DurationMinutes, true);
 
         public readonly string[] DurationMarks =
-            Enumerable.Range(0, 17)
-                      .Select(i => FormatDuration(i, false))
+            Enumerable.Range(0, MaxSliderMinutes / 15 + 1)
+                      .Select(i => FormatDuration(i * 15, false))
                       .ToArray();
 
         [MaxLength(20)]
@@ -55,9 +61,6 @@ namespace ToDo.Frontend.Pages.TaskItems
 
         public UserTaskStatus Status { get; set; } = UserTaskStatus.Todo;
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
-
-        public bool IsRecurring { get; set; }
-        public string? RecurrenceRule { get; set; }
 
         public TaskFormViewModel() { }
 
@@ -71,24 +74,12 @@ namespace ToDo.Frontend.Pages.TaskItems
             StartTime = dto.StartDate.UtcDateTime.TimeOfDay;
             EndDate = dto.EndDate.UtcDateTime.Date;
             EndTime = dto.EndDate.UtcDateTime.TimeOfDay;
-            _durationBlocks = (int)(dto.EndDate - dto.StartDate).TotalMinutes / 15;
+            DurationMinutes = (int)(dto.EndDate - dto.StartDate).TotalMinutes;
             Status = dto.Status;
             Priority = dto.Priority;
-            IsRecurring = dto.IsRecurring;
-            RecurrenceRule = dto.RecurrenceRule;
         }
 
-        private void UpdateEndByDuration()
-        {
-            if (StartDate.HasValue && StartTime.HasValue)
-            {
-                var start = StartDate.Value.Date + StartTime.Value;
-                var end = start.AddMinutes(_durationBlocks * 15);
-                EndDate = end.Date;
-                EndTime = end.TimeOfDay;
-                DateRange = new DateRange(StartDate.Value, EndDate.Value);
-            }
-        }
+
 
         public CreateTaskItemDto ToCreateDto(DateTime startUtc, DateTime endUtc) => new()
         {
@@ -99,8 +90,7 @@ namespace ToDo.Frontend.Pages.TaskItems
             EndDate = new DateTimeOffset(endUtc),
             Status = Status,
             Priority = Priority,
-            IsRecurring = IsRecurring,
-            RecurrenceRule = RecurrenceRule
+            IsRecurring = false,
         };
 
         public UpdateTaskItemDto ToUpdateDto(DateTime startUtc, DateTime endUtc) => new()
@@ -114,23 +104,61 @@ namespace ToDo.Frontend.Pages.TaskItems
             Color = Color,
             Status = Status,
             Priority = Priority,
-            IsRecurring = IsRecurring,
-            RecurrenceRule = RecurrenceRule
+            IsRecurring = false,
         };
 
-        private static string FormatDuration(int blocks, bool useMin = false)
+        public void OnDurationMinutesChanged(int durationMinutes)
         {
-            var totalMin = blocks * 15;
-            var h = totalMin / 60;
-            var m = totalMin % 60;
+            DurationMinutes = durationMinutes;
+            UpdateEndByDuration();
 
-            if (totalMin == 0)
-                return "0";
+        }
+
+        public void OnStartTimeChanged(TimeSpan? startTime)
+        {
+            StartTime = startTime;
+            UpdateDurationByTime();
+        }
+
+        public void OnEndTimeChanged(TimeSpan? endTime)
+        {
+            EndTime = endTime;
+            UpdateDurationByTime();
+        }
+
+        private void UpdateDurationByTime()
+        {
+            DurationMinutes = (int)(EndTime.Value - StartTime.Value).TotalMinutes; 
+        }
+
+        private void UpdateEndByDuration()
+        {
+            if (StartDate.HasValue && StartTime.HasValue)
+            {
+                var start = StartDate.Value.Date + StartTime.Value;
+                var end = start.AddMinutes(DurationMinutes);
+                EndDate = end.Date;
+                EndTime = end.TimeOfDay;
+                DateRange = new DateRange(StartDate.Value, EndDate.Value);
+            }
+        }
+
+        private static string FormatDuration(int minutes, bool IsDurationLabel = false)
+        {
+            var h = minutes / 60;
+            var m = minutes % 60;
+
+            if (minutes == 0)
+                if(IsDurationLabel) return "Мгновенно";
+                else return "0";
+
+            if (!IsDurationLabel && minutes >= MaxSliderMinutes)
+                return $"{h}+";
 
             if (m == 0 && h > 0)
                 return $"{h}ч";
 
-            if (!useMin)
+            if (!IsDurationLabel)
                 return string.Empty;
 
             if (h > 0)
@@ -138,6 +166,18 @@ namespace ToDo.Frontend.Pages.TaskItems
             else
                 return $"{m} мин";
 
+        }
+
+        public string? ValidateEndTime(TimeSpan? endTime)
+        {
+            if (endTime == null)
+                return "Укажите время окончания";
+
+            var start = StartDate!.Value.Date + StartTime!.Value;
+            var finish = EndDate!.Value.Date + endTime.Value;
+            return finish < start
+                ? "Конечное время должно быть позже или равно начальному"
+                : null;
         }
     }
 }
