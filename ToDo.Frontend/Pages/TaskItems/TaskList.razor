@@ -135,11 +135,20 @@
 
     private async Task DeleteTask(Guid id)
     {
-        var confirmed = await DialogService.ShowMessageBox(
-            "Подтверждение удаления",
-            "Вы уверены, что хотите удалить эту задачу?",
-            yesText: "Да", cancelText: "Отмена");
-        if (confirmed == true)
+
+        var parameters = new DialogParameters<DialogComponent>
+        {
+            { x => x.ContentText, "Вы действительно хотите удалить эту задачу? Этот процесс невозможно отменить." },
+            { x => x.ButtonText, "Удалить" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<DialogComponent>("Delete", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
         {
             try
             {
