@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 using ToDo.Shared.Dto.TaskItems;
 using ToDo.Shared.Enums;
 
-namespace ToDo.Frontend.Pages.TaskItems
+namespace ToDo.Frontend.Models
 {
-    public class TaskFormViewModel
+    public class TaskFormModel
     {
         public Guid? Id { get; set; }
 
@@ -30,24 +30,10 @@ namespace ToDo.Frontend.Pages.TaskItems
         // диапазон для DateRangePicker
         public DateRange? DateRange { get; set; }
 
-        private int _durationBlocks = 4;
 
         public const int MaxSliderMinutes = 60 * 5;
 
         public int DurationMinutes { get; set; } = 60;
-
-
-        [Required]
-        public int DurationBlocks
-        {
-            get => _durationBlocks;
-            set
-            {
-                if (value == _durationBlocks) return;
-                _durationBlocks = value;
-                UpdateEndByDuration();
-            }
-        }
 
         public string DurationLabel => FormatDuration(DurationMinutes, true);
 
@@ -62,9 +48,9 @@ namespace ToDo.Frontend.Pages.TaskItems
         public UserTaskStatus Status { get; set; } = UserTaskStatus.Todo;
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
 
-        public TaskFormViewModel() { }
+        public TaskFormModel() { }
 
-        public TaskFormViewModel(TaskItemDetailsVm dto)
+        public TaskFormModel(TaskItemDetailsVm dto)
         {
             Id = dto.Id;
             Title = dto.Title;

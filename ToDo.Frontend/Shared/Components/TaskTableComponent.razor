@@ -120,7 +120,7 @@
 
     private async Task OnEditTask(Guid id)
     {
-        var parameters = new DialogParameters<EditDialogWindow>
+        var parameters = new DialogParameters<EditDialogWindowComponent>
         {
             { x => x.ContentText, "Редактирование задачи" },
             { x => x.ButtonText, "Сохранить" },
@@ -131,7 +131,7 @@
 
         var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Medium };
 
-        var dialog = await DialogService.ShowAsync<EditDialogWindow>("Delete", parameters, options);
+        var dialog = await DialogService.ShowAsync<EditDialogWindowComponent>("Delete", parameters, options);
         var result = await dialog.Result;
     }
 }

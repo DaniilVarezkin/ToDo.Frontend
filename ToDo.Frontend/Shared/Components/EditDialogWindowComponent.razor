@@ -1,11 +1,5 @@
-﻿@using ToDo.Frontend.Pages.TaskItems
-@using Microsoft.AspNetCore.Mvc
-@using MudBlazor
-@using ToDo.Frontend.Common.Exceptions
-@using ToDo.Shared.Dto.TaskItems
-@using ToDo.Shared.Enums
-@inject ITaskItemsService TaskItemsService
-@inject ISnackbar Snackbar
+﻿@using ToDo.Shared.Enums
+@inherits EditDialogWindowViewModel
 
 <MudDialog>
     <TitleContent>
@@ -13,11 +7,11 @@
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form">
-
         <MudGrid Spacing="3">
+            <!-- Заголовок -->
             <MudItem xs="12">
                 <MudTextField T="string"
-                              @bind-Value="_viewModel.Title"
+                              @bind-Value="_model.Title"
                               Label="Заголовок"
                               Required="true"
                               RequiredError="Обязательное поле"
@@ -30,16 +24,17 @@
 
 
 
+            <!-- «Весь день» + диапазон дат -->
             <MudItem xs="12" >
                 <MudCheckBox T="bool"
                              Color="Color.Primary"
                              Label="Весь день" 
                              ValueChanged="OnIsAllDayChanged"
-                             Value="_viewModel.IsAllDay"/>
+                             Value="_model.IsAllDay"/>
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudDateRangePicker
-                    @bind-DateRange="_viewModel.DateRange"
+                    @bind-DateRange="_model.DateRange"
                     Label="Период"
                     Variant="Variant.Outlined"
                     Required="true"
@@ -47,47 +42,51 @@
                     Style="width:100%;" />
             </MudItem>
 
-            @if (!_viewModel.IsAllDay)
+            @if (!_model.IsAllDay)
             {
                 <!-- Время начала / окончания -->
                 <MudItem xs="12" sm="3">
                     <MudTimePicker T="TimeSpan?"
-                                   @bind-Time="_viewModel.StartTime"
                                    Label="Время начала"
                                    Variant="Variant.Outlined"
                                    Required="true"
                                    RequiredError="Укажите время начала"
-                                   Style="width:100%;" />
+                                   Style="width:100%;" 
+                                   Time="_model.StartTime"
+                                   TimeChanged="_model.OnStartTimeChanged"/>
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     <MudTimePicker T="TimeSpan?"
-                                   @bind-Time="_viewModel.EndTime"
                                    Label="Время окончания"
                                    Variant="Variant.Outlined"
                                    Required="true"
                                    RequiredError="Укажите время окончания"
                                    Style="width:100%;"
                                    ImmediateText="true"
-                                   Validation="(TimeSpan? time) => _viewModel.ValidateEndTime(time)"/>
+                                   Time="_model.EndTime"
+                                   TimeChanged="_model.OnEndTimeChanged"
+                                   Validation="(TimeSpan? time) => ValidateEndTime(time)"/>
                 </MudItem>
 
+                <!-- Слайдер длительности -->
                 <MudItem xs="12" Class="mx-3 mb-2">
                     <MudText Typo="Typo.body2">
-                        Длительность: @(_viewModel.DurationLabel == "0" ? "Мгновенно" :_viewModel.DurationLabel)
+                        Длительность: @_model.DurationLabel
                     </MudText>
-                    <MudSlider T="int"
-                        Size="Size.Medium"
-                               @bind-Value="_viewModel.DurationBlocks"
-                               Min="0" Max="16" Step="1"
-                               TickMarks="true"
-                               TickMarkLabels="@_viewModel.DurationMarks"
-                               Class="mt-1" />
+                    <MudSlider  T="int"
+                                Size="Size.Medium"
+                                Min="0" Max="60 * 5" Step="15"
+                                TickMarks="true"
+                                Class="mt-1" 
+                                TickMarkLabels="@_model.DurationMarks"
+                                Value="_model.DurationMinutes"
+                                ValueChanged="_model.OnDurationMinutesChanged"/>
                 </MudItem>
             }
             <MudFlexBreak />
             <MudItem xs="12" sm="4">
                 <MudSelect T="UserTaskStatus"
-                           @bind-Value="_viewModel.Status"
+                           @bind-Value="_model.Status"
                            Label="Статус"
                            Variant="Variant.Outlined"
                            Style="width:100%;">
@@ -99,7 +98,7 @@
             </MudItem>
             <MudItem xs="12" sm="4">
                 <MudSelect T="TaskPriority"
-                           @bind-Value="_viewModel.Priority"
+                           @bind-Value="_model.Priority"
                            Label="Приоритет"
                            Variant="Variant.Outlined"
                            Style="width:100%;">
@@ -110,10 +109,9 @@
                 </MudSelect>
             </MudItem>
 
-                        <!-- Описание -->
             <MudItem xs="12">
                 <MudTextField T="string"
-                              @bind-Value="_viewModel.Description"
+                              @bind-Value="_model.Description"
                               Label="Описание"
                               Variant="Variant.Outlined"
                               Lines="3"
@@ -128,7 +126,7 @@
                 <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               OnClick="@Submit">
+                               OnClick="@SubmitAsync">
                         @(Id.HasValue ? "Сохранить" : "Создать")
                     </MudButton>
                     <MudButton Variant="Variant.Outlined"
@@ -145,81 +143,3 @@
         <MudButton Color="Color.Primary" OnClick="Submit">@ButtonText</MudButton>
     </DialogActions>
 </MudDialog>
-
-@code {
-    [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; }
-
-    [Parameter]
-    public string ContentText { get; set; }
-
-    [Parameter]
-    public string ButtonText { get; set; }
-
-    [Parameter]
-    public Color Color { get; set; }
-
-    //Параметры для задачи
-
-    [Parameter]
-    public Func<Task> OnSubmit { get; set; }
-
-    [Parameter] public Guid? Id { get; set; }
-
-    private MudForm _form = null!;
-    private TaskFormViewModel _viewModel = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        if (Id.HasValue)
-        {
-            // Редактирование
-            var dto = await TaskItemsService.GetAsync(Id.Value);
-            if (dto == null)
-            {
-                Snackbar.Add("Задача не найдена", Severity.Error);
-                Cancel();
-                return;
-            }
-            _viewModel = new TaskFormViewModel(dto);
-        }
-        else
-        {
-            _viewModel.StartDate      = DateTime.Today;
-            _viewModel.StartTime      = TimeSpan.FromHours(9);
-            _viewModel.DurationBlocks = 4; // 1 час
-
-            // Вычисляем конец задачи, чтобы EndDate/EndTime были не null
-            var start = _viewModel.StartDate.Value.Date + _viewModel.StartTime.Value;
-            var end   = start.AddMinutes(_viewModel.DurationBlocks * 15);
-            _viewModel.EndDate = end.Date;
-            _viewModel.EndTime = end.TimeOfDay;
-        }
-
-        // И только теперь безопасно создаём DateRange
-        if (_viewModel.StartDate.HasValue && _viewModel.EndDate.HasValue)
-            _viewModel.DateRange = new DateRange(
-                _viewModel.StartDate.Value,
-                _viewModel.EndDate.Value
-            );
-    }
-
-    private void Submit() {
-        if(true)
-        {
-            OnSubmit();
-            MudDialog.Close(DialogResult.Ok(true));
-        }
-        
-    }
-
-    private void Cancel() => MudDialog.Cancel();
-
-
-        private void OnIsAllDayChanged(bool value)
-    {
-         _viewModel.IsAllDay = value;
-    }
-
-
-}
