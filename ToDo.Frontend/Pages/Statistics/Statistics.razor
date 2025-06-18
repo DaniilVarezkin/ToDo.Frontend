@@ -6,22 +6,22 @@
 @inject IStatisticService StatisticService
 @inject ISnackbar Snackbar
 
-<MudPaper Class="pa-4 mb-4">
-    <MudGrid GutterSize="3">
+<MudPaper Class="pa-4 mb-4 mud-elevation-2">
+    <MudGrid GutterSize="4">
         <MudItem xs="12" sm="4">
-            <MudCard Class="pa-3 d-flex flex-column align-center">
+            <MudCard Class="pa-4 d-flex flex-column align-center">
                 <MudText Typo="Typo.h6">Всего задач</MudText>
                 <MudText Typo="Typo.h3">@_global.TotalCount</MudText>
             </MudCard>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <MudCard Class="pa-3 d-flex flex-column align-center">
+            <MudCard Class="pa-4 d-flex flex-column align-center">
                 <MudText Typo="Typo.h6">Среднее время (ч)</MudText>
                 <MudText Typo="Typo.h3">@_global.AvgCompletionTimeHours.ToString("F1")</MudText>
             </MudCard>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <MudCard Class="pa-3 d-flex flex-column align-center">
+            <MudCard Class="pa-4 d-flex flex-column align-center">
                 <MudText Typo="Typo.h6">Просрочено</MudText>
                 <MudText Typo="Typo.h3">@_global.OverdueCount</MudText>
             </MudCard>
@@ -29,43 +29,44 @@
     </MudGrid>
 </MudPaper>
 
-<MudPaper Class="pa-4 mb-4 d-flex justify-center">
+<MudPaper Class="pa-4 mb-4 d-flex justify-center mud-elevation-2">
     <MudChart ChartType="ChartType.Donut"
               Width="300px"
               Height="300px"
               InputData="@_statusData"
               InputLabels="@_statusLabels">
         <CustomGraphics>
-            <text x="50%" y="40%" dominant-baseline="middle" text-anchor="middle" font-size="20">ByStatus</text>
-            <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="30">@_statusData.Sum()</text>
+            <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" font-size="18">By Status</text>
+            <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-size="28">@_statusData.Sum()</text>
         </CustomGraphics>
     </MudChart>
 </MudPaper>
 
-<MudPaper Class="pa-4 mb-4">
-    <MudChart ChartType="ChartType.Bar"
+<MudPaper Class="pa-4 mb-4 mud-elevation-2">
+    <MudChart ChartType="ChartType.StackedBar"
               ChartSeries="@_statusSeries"
               XAxisLabels="@_statusLabels"
-              Height="300px" />
+              Width="100%"
+              Height="400px"
+              AxisChartOptions="@(new AxisChartOptions {StackedBarWidthRatio = 0.5})"/>
 </MudPaper>
 
-<MudPaper Class="pa-4">
+<MudPaper Class="pa-4 mud-elevation-2">
     <MudChart ChartType="ChartType.Line"
               ChartSeries="@_dailySeries"
               XAxisLabels="@_dailyLabels"
-              Height="300px" />
+              Width="100%"
+              Height="400px"/>
 </MudPaper>
 
 @code {
     private GlobalTaskStatisticsVm _global = new();
     private DailyTaskStatisticsVm _daily = new();
 
-    // Для Donut и Bar по статусам
     private double[] _statusData = Array.Empty<double>();
     private string[] _statusLabels = Array.Empty<string>();
     private List<ChartSeries> _statusSeries = new();
 
-    // Для Line по ежедневной статистике
     private double[] _dailyData = Array.Empty<double>();
     private string[] _dailyLabels = Array.Empty<string>();
     private List<ChartSeries> _dailySeries = new();
@@ -87,11 +88,8 @@
 
     private void BuildStatusCharts()
     {
-        // Распаковываем словарь ByStatus в два массива
         _statusLabels = _global.ByStatus.Keys.Select(k => k.ToString()).ToArray();
         _statusData = _global.ByStatus.Values.Select(v => (double)v).ToArray();
-
-        // Для BarChart сделаем серию
         _statusSeries = new List<ChartSeries>
         {
             new ChartSeries { Name = "Количество", Data = _statusData }
@@ -100,19 +98,9 @@
 
     private void BuildDailyChart()
     {
-        // Сортируем по дню на всякий случай
-        var history = _daily.History
-            .OrderBy(x => x.Day)
-            .ToList();
-
-        _dailyLabels = history
-            .Select(x => x.Day.ToString("MM-dd"))
-            .ToArray();
-
-        _dailyData = history
-            .Select(x => (double)x.CompletedCount)
-            .ToArray();
-
+        var history = _daily.History.OrderBy(x => x.Day).ToList();
+        _dailyLabels = history.Select(x => x.Day.ToString("MM-dd")).ToArray();
+        _dailyData = history.Select(x => (double)x.CompletedCount).ToArray();
         _dailySeries = new List<ChartSeries>
         {
             new ChartSeries { Name = "Выполнено", Data = _dailyData }

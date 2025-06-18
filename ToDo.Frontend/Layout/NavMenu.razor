@@ -21,15 +21,17 @@
                             Match="NavLinkMatch.All">
                     Календарь
                 </MudNavLink>
-                <MudNavLink Href="statistics"
-                            Match="NavLinkMatch.All">
-                    Статистика
-                </MudNavLink>
+
                 <MudNavLink Href="tasks/form"
                             Match="NavLinkMatch.All">
                     Новая задача
                 </MudNavLink>
             </MudNavGroup>
+            <MudNavLink Href="statistics"
+                        Icon="@Icons.Material.Filled.Dashboard"
+                        Match="NavLinkMatch.All">
+                Статистика
+            </MudNavLink>
             <MudNavLink OnClick="@Logout"
                         Icon="@Icons.Material.Filled.ExitToApp"
                         DisableRipple="true">
