@@ -16,5 +16,7 @@ namespace ToDo.Frontend.Services.Statistic
         /// </summary>
         /// <param name="days">Количество дней для статистики (по умолчанию 7).</param>
         Task<DailyTaskStatisticsVm> GetDailyAsync(int days = 7);
+
+        Task<TaskStatusHistoryVm> GetStatusHistoryAsync(int days = 7);
     }
 }

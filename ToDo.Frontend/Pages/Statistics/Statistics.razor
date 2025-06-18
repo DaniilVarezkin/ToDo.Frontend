@@ -22,21 +22,21 @@
         </MudItem>
         <MudItem xs="12" sm="4">
             <MudCard Class="pa-4 d-flex flex-column align-center">
-                <MudText Typo="Typo.h6">Просрочено</MudText>
+                <MudText Typo="Typo.h6">Просрочено всего</MudText>
                 <MudText Typo="Typo.h3">@_global.OverdueCount</MudText>
             </MudCard>
         </MudItem>
     </MudGrid>
 </MudPaper>
 
-<MudPaper Class="pa-4 mb-4 d-flex justify-center mud-elevation-2">
+<MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
     <MudChart ChartType="ChartType.Donut"
               Width="300px"
               Height="300px"
               InputData="@_statusData"
               InputLabels="@_statusLabels">
         <CustomGraphics>
-            <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" font-size="18">By Status</text>
+            <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" font-size="18">По статусам</text>
             <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-size="28">@_statusData.Sum()</text>
         </CustomGraphics>
     </MudChart>
@@ -44,41 +44,53 @@
 
 <MudPaper Class="pa-4 mb-4 mud-elevation-2">
     <MudChart ChartType="ChartType.StackedBar"
+              ChartSeries="@_dailyBarSeries"
+              XAxisLabels="@_dailyLabels"
+              Width="100%"
+              Height="350px" />
+</MudPaper>
+
+<MudPaper Class="pa-4 mb-4 mud-elevation-2">
+    <MudChart ChartType="ChartType.StackedBar"
               ChartSeries="@_statusSeries"
               XAxisLabels="@_statusLabels"
               Width="100%"
-              Height="400px"
-              AxisChartOptions="@(new AxisChartOptions {StackedBarWidthRatio = 0.5})"/>
+              Height="400px" />
 </MudPaper>
 
 <MudPaper Class="pa-4 mud-elevation-2">
-    <MudChart ChartType="ChartType.Line"
-              ChartSeries="@_dailySeries"
-              XAxisLabels="@_dailyLabels"
-              Width="100%"
-              Height="400px"/>
+    <MudTimeSeriesChart ChartSeries="@_trendSeries"
+                        Width="100%"
+                        Height="400px"
+                        TimeLabelSpacing="TimeSpan.FromDays(1)"
+                        CanHideSeries="true"
+                        DataMarkerTooltipTimeLabelFormat="yyyy-MM-dd" />
 </MudPaper>
 
 @code {
     private GlobalTaskStatisticsVm _global = new();
-    private DailyTaskStatisticsVm _daily = new();
-
     private double[] _statusData = Array.Empty<double>();
     private string[] _statusLabels = Array.Empty<string>();
     private List<ChartSeries> _statusSeries = new();
 
-    private double[] _dailyData = Array.Empty<double>();
+    // Для дневных баров: Создано/Завершено/Просрочено
+    private List<ChartSeries> _dailyBarSeries = new();
     private string[] _dailyLabels = Array.Empty<string>();
-    private List<ChartSeries> _dailySeries = new();
+
+    private List<TimeSeriesChartSeries> _trendSeries = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // 1) Глобальная статистика
             _global = await StatisticService.GetGlobalAsync();
-            _daily = await StatisticService.GetDailyAsync(days: 14);
             BuildStatusCharts();
-            BuildDailyChart();
+
+            // 2) История метрик за 14 дней
+            var historyVm = await StatisticService.GetStatusHistoryAsync(days: 14);
+            BuildDailyBars(historyVm);
+            BuildTrends(historyVm);
         }
         catch (Exception ex)
         {
@@ -96,14 +108,41 @@
         };
     }
 
-    private void BuildDailyChart()
+    private void BuildDailyBars(TaskStatusHistoryVm vm)
     {
-        var history = _daily.History.OrderBy(x => x.Day).ToList();
-        _dailyLabels = history.Select(x => x.Day.ToString("MM-dd")).ToArray();
-        _dailyData = history.Select(x => (double)x.CompletedCount).ToArray();
-        _dailySeries = new List<ChartSeries>
+        // Метки x-axis
+        _dailyLabels = vm.CreatedHistory
+            .OrderBy(x => x.Day)
+            .Select(x => x.Day.ToString("MM-dd"))
+            .ToArray();
+
+        // Данные
+        var created = vm.CreatedHistory.OrderBy(x => x.Day).Select(x => (double)x.Count).ToArray();
+        var completed = vm.CompletedHistory.OrderBy(x => x.Day).Select(x => (double)x.Count).ToArray();
+        var overdue = vm.OverdueHistory.OrderBy(x => x.Day).Select(x => (double)x.Count).ToArray();
+
+        _dailyBarSeries = new List<ChartSeries>
         {
-            new ChartSeries { Name = "Выполнено", Data = _dailyData }
+            new ChartSeries { Name = "Создано", Data = created },
+            new ChartSeries { Name = "Завершено", Data = completed },
+            new ChartSeries { Name = "Просрочено", Data = overdue }
+        };
+    }
+
+    private void BuildTrends(TaskStatusHistoryVm vm)
+    {
+        var created = vm.CreatedHistory.OrderBy(x => x.Day)
+            .Select(x => new TimeSeriesChartSeries.TimeValue(x.Day.DateTime, x.Count)).ToList();
+        var completed = vm.CompletedHistory.OrderBy(x => x.Day)
+            .Select(x => new TimeSeriesChartSeries.TimeValue(x.Day.DateTime, x.Count)).ToList();
+        var overdue = vm.OverdueHistory.OrderBy(x => x.Day)
+            .Select(x => new TimeSeriesChartSeries.TimeValue(x.Day.DateTime, x.Count)).ToList();
+
+        _trendSeries = new List<TimeSeriesChartSeries>
+        {
+            new TimeSeriesChartSeries { Name = "Создано", Data = created, IsVisible = true, LineDisplayType = LineDisplayType.Line },
+            new TimeSeriesChartSeries { Name = "Завершено", Data = completed, IsVisible = true, LineDisplayType = LineDisplayType.Line },
+            new TimeSeriesChartSeries { Name = "Просрочено", Data = overdue, IsVisible = true, LineDisplayType = LineDisplayType.Line }
         };
     }
 }

@@ -33,5 +33,19 @@ namespace ToDo.Frontend.Services.Statistic
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<DailyTaskStatisticsVm>()!;
         }
+
+        public async Task<TaskStatusHistoryVm> GetStatusHistoryAsync(int days = 7)
+        {
+            var url = QueryHelpers.AddQueryString(
+                "api/statistics/GetStatusHistory",
+                new Dictionary<string, string?>
+                {
+                    ["days"] = days.ToString()
+                }
+            );
+            var response = await _http.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<TaskStatusHistoryVm>()!;
+        }
     }
 }
