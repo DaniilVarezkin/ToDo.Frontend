@@ -16,55 +16,76 @@
         </MudItem>
         <MudItem xs="12" sm="4">
             <MudCard Class="pa-4 d-flex flex-column align-center">
-                <MudText Typo="Typo.h6">Среднее время (ч)</MudText>
+                <MudText Typo="Typo.h6">Среднее время выполнения (ч)</MudText>
                 <MudText Typo="Typo.h3">@_global.AvgCompletionTimeHours.ToString("F1")</MudText>
             </MudCard>
         </MudItem>
         <MudItem xs="12" sm="4">
             <MudCard Class="pa-4 d-flex flex-column align-center">
-                <MudText Typo="Typo.h6">Просрочено всего</MudText>
+                <MudText Typo="Typo.h6">Всего просрочено</MudText>
                 <MudText Typo="Typo.h3">@_global.OverdueCount</MudText>
             </MudCard>
         </MudItem>
     </MudGrid>
 </MudPaper>
 
+<!-- Donut Chart -->
 <MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
-    <MudChart ChartType="ChartType.Donut"
-              Width="300px"
-              Height="300px"
-              InputData="@_statusData"
-              InputLabels="@_statusLabels">
-        <CustomGraphics>
-            <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" font-size="18">По статусам</text>
-            <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-size="28">@_statusData.Sum()</text>
-        </CustomGraphics>
-    </MudChart>
+    <MudStack>
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Распределение задач по статусам</MudText>
+        <MudChart ChartType="ChartType.Donut"
+                  Width="300px"
+                  Height="300px"
+                  InputData="@_statusData"
+                  InputLabels="@_statusLabels">
+            <CustomGraphics>
+                <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" font-size="18">По статусам</text>
+                <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-size="28">@_statusData.Sum()</text>
+            </CustomGraphics>
+        </MudChart>
+    </MudStack>
 </MudPaper>
 
-<MudPaper Class="pa-4 mb-4 mud-elevation-2">
-    <MudChart ChartType="ChartType.StackedBar"
-              ChartSeries="@_dailyBarSeries"
-              XAxisLabels="@_dailyLabels"
-              Width="100%"
-              Height="350px" />
+<!-- Daily Bar Chart -->
+<MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
+    <MudStack>
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Ежедневная статистика: создано, завершено, просрочено</MudText>
+        <MudChart ChartType="ChartType.StackedBar"
+                  ChartSeries="@_dailyBarSeries"
+                  XAxisLabels="@_dailyLabels"
+                  Width="100%"
+                  Height="350px" />
+    </MudStack>
 </MudPaper>
 
-<MudPaper Class="pa-4 mb-4 mud-elevation-2">
-    <MudChart ChartType="ChartType.StackedBar"
-              ChartSeries="@_statusSeries"
-              XAxisLabels="@_statusLabels"
-              Width="100%"
-              Height="400px" />
+<!-- Status Bar Chart -->
+<MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
+    <MudStack>
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Текущее распределение задач по статусам</MudText>
+        <MudChart ChartType="ChartType.StackedBar"
+                  ChartSeries="@_statusSeries"
+                  XAxisLabels="@_statusLabels"
+                  Width="100%"
+                  Height="400px" />
+    </MudStack>
 </MudPaper>
 
-<MudPaper Class="pa-4 mud-elevation-2">
-    <MudTimeSeriesChart ChartSeries="@_trendSeries"
-                        Width="100%"
-                        Height="400px"
-                        TimeLabelSpacing="TimeSpan.FromDays(1)"
-                        CanHideSeries="true"
-                        DataMarkerTooltipTimeLabelFormat="yyyy-MM-dd" />
+<!-- Time Series Chart -->
+<MudPaper Class="pa-4 mud-elevation-2 d-flex justify-center">
+    <MudStack>
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Тренды по метрикам во времени</MudText>
+        <MudTimeSeriesChart ChartSeries="@_trendSeries"
+                            Width="100%"
+                            Height="400px"
+                            TimeLabelFormat="M"
+                            TimeLabelSpacing="TimeSpan.FromDays(1)"
+                            TimeLabelSpacingRounding="true"
+                            TimeLabelSpacingRoundingPadSeries="true"
+                            AxisChartOptions="@_timeAxisOptions"
+                            CanHideSeries="true"
+                            DataMarkerTooltipTimeLabelFormat="yyyy-MM-dd" 
+                            ChartOptions="@timeSeriesChartOptions" />
+    </MudStack>
 </MudPaper>
 
 @code {
@@ -73,21 +94,22 @@
     private string[] _statusLabels = Array.Empty<string>();
     private List<ChartSeries> _statusSeries = new();
 
-    // Для дневных баров: Создано/Завершено/Просрочено
     private List<ChartSeries> _dailyBarSeries = new();
     private string[] _dailyLabels = Array.Empty<string>();
 
     private List<TimeSeriesChartSeries> _trendSeries = new();
+    private ChartOptions timeSeriesChartOptions = new ChartOptions { YAxisTicks = 10 };
+
+    // Настройки осей для TimeSeries
+    private AxisChartOptions _timeAxisOptions = new() { XAxisLabelRotation = 45, MatchBoundsToSize = true };
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 1) Глобальная статистика
             _global = await StatisticService.GetGlobalAsync();
             BuildStatusCharts();
 
-            // 2) История метрик за 14 дней
             var historyVm = await StatisticService.GetStatusHistoryAsync(days: 14);
             BuildDailyBars(historyVm);
             BuildTrends(historyVm);
@@ -102,21 +124,12 @@
     {
         _statusLabels = _global.ByStatus.Keys.Select(k => k.ToString()).ToArray();
         _statusData = _global.ByStatus.Values.Select(v => (double)v).ToArray();
-        _statusSeries = new List<ChartSeries>
-        {
-            new ChartSeries { Name = "Количество", Data = _statusData }
-        };
+        _statusSeries = new List<ChartSeries> { new ChartSeries { Name = "Количество", Data = _statusData } };
     }
 
     private void BuildDailyBars(TaskStatusHistoryVm vm)
     {
-        // Метки x-axis
-        _dailyLabels = vm.CreatedHistory
-            .OrderBy(x => x.Day)
-            .Select(x => x.Day.ToString("MM-dd"))
-            .ToArray();
-
-        // Данные
+        _dailyLabels = vm.CreatedHistory.OrderBy(x => x.Day).Select(x => x.Day.ToString("MM-dd")).ToArray();
         var created = vm.CreatedHistory.OrderBy(x => x.Day).Select(x => (double)x.Count).ToArray();
         var completed = vm.CompletedHistory.OrderBy(x => x.Day).Select(x => (double)x.Count).ToArray();
         var overdue = vm.OverdueHistory.OrderBy(x => x.Day).Select(x => (double)x.Count).ToArray();
@@ -137,6 +150,12 @@
             .Select(x => new TimeSeriesChartSeries.TimeValue(x.Day.DateTime, x.Count)).ToList();
         var overdue = vm.OverdueHistory.OrderBy(x => x.Day)
             .Select(x => new TimeSeriesChartSeries.TimeValue(x.Day.DateTime, x.Count)).ToList();
+
+
+        var createdMax =  created.Select(i => i.Value).Max();
+        var completedMax = completed.Select(i => i.Value).Max();
+        var overdueMax = overdue.Select(i => i.Value).Max();
+        timeSeriesChartOptions.YAxisTicks = (int)(new[] { createdMax, completedMax, overdueMax }.Max()) * 2;
 
         _trendSeries = new List<TimeSeriesChartSeries>
         {
