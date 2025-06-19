@@ -1,36 +1,45 @@
-name: Deploy to GitHub Pages (Windows)
+name: Deploy Blazor WASM to GitHub Pages (Windows)
 
 on:
   push:
-    branches: 
-      - master   # или main, если у вас основная ветка main
+    branches:
+      - master   # или main
 
 jobs:
-  deploy-to-github-pages:
+  deploy:
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup .NET 8 SDK
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      - name: Find all .csproj files
+      - name: Find all .csproj files (debug)
         shell: pwsh
-        run: Get-ChildItem -Path . -Filter '*.csproj' -Recurse | ForEach-Object FullName
+        run: |
+          Write-Host "→ .csproj files in repo:"
+          Get-ChildItem -Path . -Filter '*.csproj' -Recurse | ForEach-Object FullName
 
       - name: Publish Frontend
         shell: pwsh
-        working-directory: 'ToDo.Frontend\ToDo.Frontend'
-        run: dotnet publish -c Release --output release
+        working-directory: 'ToDo.Frontend'
+        run: dotnet publish -c Release --output release --nologo
+
+      - name: Inspect publish folder (debug)
+        shell: pwsh
+        run: |
+          Write-Host "→ release folder contents:"
+          Get-ChildItem -Path ToDo.Frontend\release -Recurse
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
-          folder: 'ToDo.Frontend/ToDo.Frontend/release/wwwroot'
+          # Скорректируйте этот путь после того, как увидите, где лежит ваш index.html
+          folder: ToDo.Frontend\release
