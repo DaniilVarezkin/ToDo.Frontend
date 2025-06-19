@@ -109,25 +109,4 @@
     {
         _currenHoverRowTaskId = null;
     }
-    // private async Task OnEdit()
-    // {
-    //     Console.WriteLine("OnEdit");
-    // }
-
-    // private async Task OnEditTask(Guid id)
-    // {
-    //     var parameters = new DialogParameters<EditDialogWindowComponent>
-    //     {
-    //         { x => x.ContentText, "Редактирование задачи" },
-    //         { x => x.ButtonText, "Сохранить" },
-    //         { x => x.Color, Color.Primary },
-    //         { x => x.OnSubmit, OnEdit},
-    //         { x => x.Id, id},
-    //     };
-
-    //     var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Medium };
-
-    //     var dialog = await DialogService.ShowAsync<EditDialogWindowComponent>("Delete", parameters, options);
-    //     var result = await dialog.Result;
-    // }
 }

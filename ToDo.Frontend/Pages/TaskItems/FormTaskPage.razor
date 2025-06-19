@@ -35,8 +35,10 @@
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudDateRangePicker
-                    @bind-DateRange="_model.DateRange"
+                    DateRange="_model.DateRange"
+                    DateRangeChanged="_model.OnDateRangeChanged"
                     Label="Период"
+                    PickerVariant="PickerVariant.Dialog"
                     Variant="Variant.Outlined"
                     Required="true"
                     RequiredError="Укажите даты"
@@ -50,6 +52,7 @@
                     <MudTimePicker T="TimeSpan?"
                                    Label="Время начала"
                                    Variant="Variant.Outlined"
+                                   PickerVariant="PickerVariant.Dialog"
                                    Required="true"
                                    RequiredError="Укажите время начала"
                                    Style="width:100%;" 
@@ -59,6 +62,7 @@
                 <MudItem xs="12" sm="3">
                     <MudTimePicker T="TimeSpan?"
                                    Label="Время окончания"
+                                   PickerVariant="PickerVariant.Dialog"
                                    Variant="Variant.Outlined"
                                    Required="true"
                                    RequiredError="Укажите время окончания"
@@ -69,20 +73,24 @@
                                    Validation="(TimeSpan? time) => ValidateEndTime(time)"/>
                 </MudItem>
 
-                <!-- Слайдер длительности -->
-                <MudItem xs="12" Class="mx-3 mb-2">
-                    <MudText Typo="Typo.body2">
-                        Длительность: @_model.DurationLabel
-                    </MudText>
-                    <MudSlider  T="int"
-                                Size="Size.Medium"
-                                Min="0" Max="60 * 5" Step="15"
-                                TickMarks="true"
-                                Class="mt-1" 
-                                TickMarkLabels="@_model.DurationMarks"
-                                Value="_model.DurationMinutes"
-                                ValueChanged="_model.OnDurationMinutesChanged"/>
-                </MudItem>
+                @if (_model.StartDate.HasValue && _model.EndDate.HasValue &&
+                    (_model.EndDate.Value.Date - _model.StartDate.Value.Date).Days < 1)
+                {
+                    <!-- Слайдер длительности -->
+                    <MudItem xs="12" Class="mx-3 mb-2">
+                        <MudText Typo="Typo.body2">
+                            Длительность: @_model.DurationLabel
+                        </MudText>
+                        <MudSlider T="int"
+                                   Size="Size.Medium"
+                                   Min="0" Max="60 * 5" Step="15"
+                                   TickMarks="true"
+                                   Class="mt-1"
+                                   TickMarkLabels="@_model.DurationMarks"
+                                   Value="_model.DurationMinutes"
+                                   ValueChanged="_model.OnDurationMinutesChanged" />
+                    </MudItem>
+                }
             }
             <MudFlexBreak />
             <MudItem xs="12" sm="4">
@@ -139,3 +147,6 @@
         </MudGrid>
     </MudForm>
 </MudPaper>
+@code {
+
+}

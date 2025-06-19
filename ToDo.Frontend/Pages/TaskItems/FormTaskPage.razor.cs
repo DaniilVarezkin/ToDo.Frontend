@@ -25,7 +25,6 @@ namespace ToDo.Frontend.Pages.TaskItems
         {
             if (Id.HasValue)
             {
-                // Редактирование
                 var dto = await TaskItemsService.GetAsync(Id.Value);
                 if (dto == null)
                 {
@@ -35,26 +34,22 @@ namespace ToDo.Frontend.Pages.TaskItems
                 }
                 _model = new TaskFormModel(dto);
             }
-            else if (Date.HasValue)
-            {
-                Console.WriteLine("-----------");
-                _model.StartDate = Date;
-            }
             else
             {
                 _model.StartDate = DateTime.Today;
+                _model.StartTime = TimeSpan.FromHours(9);
+
+                var start = _model.StartDate.Value.Date + _model.StartTime.Value;
+                var end = start.AddMinutes(_model.DurationMinutes);
+                _model.EndDate = end.Date;
+                _model.EndTime = end.TimeOfDay;
             }
 
-            _model.StartTime = TimeSpan.FromHours(9);
+            if (Date.HasValue)
+            {
+                _model.StartDate = Date;
+            }
 
-            var start = _model.StartDate.Value.Date + _model.StartTime.Value;
-            var end = start.AddMinutes(_model.DurationMinutes);
-            _model.EndDate = end.Date;
-            _model.EndTime = end.TimeOfDay;
-
-            
-
-            // И только теперь безопасно создаём DateRange
             if (_model.StartDate.HasValue && _model.EndDate.HasValue)
                 _model.DateRange = new DateRange(
                     _model.StartDate.Value,
@@ -69,12 +64,10 @@ namespace ToDo.Frontend.Pages.TaskItems
 
             var startLocal = _model.StartDate!.Value.Date + _model.StartTime!.Value;
             var endLocal = _model.EndDate!.Value.Date + _model.EndTime!.Value;
-            var startUtc = DateTime.SpecifyKind(startLocal, DateTimeKind.Utc);
-            var endUtc = DateTime.SpecifyKind(endLocal, DateTimeKind.Utc);
 
             if (_model.Id.HasValue)
             {
-                var upd = _model.ToUpdateDto(startUtc, endUtc);
+                var upd = _model.ToUpdateDto(startLocal, endLocal);
                 try
                 {
                     await TaskItemsService.UpdateAsync(upd);
@@ -101,7 +94,7 @@ namespace ToDo.Frontend.Pages.TaskItems
             }
             else
             {
-                var cr = _model.ToCreateDto(startUtc, endUtc);
+                var cr = _model.ToCreateDto(startLocal, endLocal);
                 try
                 {
                     await TaskItemsService.CreateAsync(cr);
@@ -149,5 +142,7 @@ namespace ToDo.Frontend.Pages.TaskItems
         {
             Nav.NavigateTo("tasks/");
         }
+
+
     }
 }

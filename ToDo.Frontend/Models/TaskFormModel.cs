@@ -1,4 +1,5 @@
 ﻿using MudBlazor;
+using Syncfusion.Blazor.PivotView;
 using System.ComponentModel.DataAnnotations;
 using ToDo.Shared.Dto.TaskItems;
 using ToDo.Shared.Enums;
@@ -56,10 +57,10 @@ namespace ToDo.Frontend.Models
             Title = dto.Title;
             Description = dto.Description;
             IsAllDay = dto.IsAllDay;
-            StartDate = dto.StartDate.UtcDateTime.Date;
-            StartTime = dto.StartDate.UtcDateTime.TimeOfDay;
-            EndDate = dto.EndDate.UtcDateTime.Date;
-            EndTime = dto.EndDate.UtcDateTime.TimeOfDay;
+            StartDate = dto.StartDate.LocalDateTime.Date;
+            StartTime = dto.StartDate.LocalDateTime.TimeOfDay;
+            EndDate = dto.EndDate.LocalDateTime.Date;
+            EndTime = dto.EndDate.LocalDateTime.TimeOfDay;
             DurationMinutes = (int)(dto.EndDate - dto.StartDate).TotalMinutes;
             Status = dto.Status;
             Priority = dto.Priority;
@@ -115,6 +116,34 @@ namespace ToDo.Frontend.Models
         private void UpdateDurationByTime()
         {
             DurationMinutes = (int)(EndTime.Value - StartTime.Value).TotalMinutes; 
+        }
+
+        public void OnDateRangeChanged(DateRange dateRange)
+        {
+            DateRange = dateRange;
+
+            if (dateRange.Start.HasValue)
+            {
+                StartDate = dateRange.Start.Value.Date;
+                if (!StartTime.HasValue)
+                    StartTime = TimeSpan.Zero;
+            }
+
+            if (dateRange.End.HasValue)
+            {
+                EndDate = dateRange.End.Value.Date;
+                if (!EndTime.HasValue)
+                    EndTime = TimeSpan.Zero;
+            }
+
+            // Пересчёт длительности
+            if (StartDate.HasValue && StartTime.HasValue && EndDate.HasValue && EndTime.HasValue)
+            {
+                var start = StartDate.Value + StartTime.Value;
+                var end = EndDate.Value + EndTime.Value;
+
+                DurationMinutes = (int)(end - start).TotalMinutes;
+            }
         }
 
         private void UpdateEndByDuration()
