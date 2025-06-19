@@ -2,15 +2,13 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: master   # или main, в зависимости от вашей ветки
+    branches: master  # или main, в зависимости от вашей ветки
 
 jobs:
   deploy-to-github-pages:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Setup .NET 8 SDK
         uses: actions/setup-dotnet@v3
@@ -18,15 +16,15 @@ jobs:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      - name: List folder structure
+      - name: List repository
         run: ls -R .
 
-      - name: Publish Frontend
-        working-directory: ToDo.Frontend/ToDo.Frontend
+      - name: Publish .NET Core Project
+        working-directory: src/ToDo.Frontend    # <-- ваш путь
         run: dotnet publish -c Release --output release --nologo
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
           branch: gh-pages
-          folder: ToDo.Frontend/ToDo.Frontend/release/wwwroot
+          folder: src/ToDo.Frontend/release/wwwroot
