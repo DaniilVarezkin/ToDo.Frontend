@@ -113,8 +113,10 @@
     <PagerContent>
         @if (!HidePagination)
         {
-            <MudTablePager HideRowsPerPage="true"
-                           HorizontalAlignment="HorizontalAlignment.Center" />
+            <MudItem xs="12" Class="d-flex justify-center">
+                <MudTablePager HideRowsPerPage="true"
+                               HidePageNumber="true" />
+            </MudItem>
         }
     </PagerContent>
 </MudTable>

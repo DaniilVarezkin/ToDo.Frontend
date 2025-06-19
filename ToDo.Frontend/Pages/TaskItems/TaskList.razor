@@ -10,14 +10,16 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<MudPaper Class="pa-4">
+<MudPaper Class="pa-4" Style="position: relative;">
     <MudGrid Spacing="3">
 
         <!-- Таб фильтрации -->
-        <MudItem xs="12" sm="4">
+        <MudItem xs="12" sm="4" >
             <MudTabs ActivePanelIndex="_activeFilter"
                      ActivePanelIndexChanged="OnFilterChanged"
-                     Rounded="true">
+                     Rounded="true"
+                     Centered="true">
+                     
                 <MudTabPanel Text="Сегодня" />
                 <MudTabPanel Text="Все" />
             </MudTabs>
@@ -36,15 +38,6 @@
                           Class="w-100" />
         </MudItem>
 
-        <!-- Кнопка добавления -->
-        <MudItem xs="12" sm="4" Class="d-flex justify-end align-center">
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       OnClick='() => Nav.NavigateTo($"/tasks/form")'>
-                Добавить задачу
-            </MudButton>
-        </MudItem>
-
         <!-- Таблица задач -->
         <MudItem xs="12">
             <TaskTableComponent @ref="_taskTable"
@@ -57,6 +50,8 @@
         </MudItem>
 
     </MudGrid>
+
+    <AddFabButton OnClick='() => Nav.NavigateTo("/tasks/form")' />
 </MudPaper>
 
 @code {
@@ -87,9 +82,10 @@
         DateTimeOffset? dateTo = null;
         if (_activeFilter == 0)
         {
-            var utcToday = DateTime.UtcNow.Date;
-            dateFrom = new DateTimeOffset(utcToday, TimeSpan.Zero);
-            dateTo = new DateTimeOffset(utcToday.AddDays(1).AddTicks(-1), TimeSpan.Zero);
+            var localToday = DateTime.Today;                      // локальная дата
+            var offset = TimeZoneInfo.Local.GetUtcOffset(localToday);
+            dateFrom = new DateTimeOffset(localToday, offset);
+            dateTo = new DateTimeOffset(localToday.AddDays(1).AddTicks(-1), offset);
         }
 
         var query = new GetTaskItemListQueryDto

@@ -7,7 +7,7 @@
 @inject ISnackbar Snackbar
 
 
-<MudPaper Class="pa-4 mb-4 mud-elevation-2" >
+<MudPaper Class="pa-4" Elevation="0" Width="100%">
     <MudGrid>
         <MudItem xs="12" sm="4">
             <MudCard Class="pa-4 d-flex flex-column align-center">
@@ -30,77 +30,79 @@
     </MudGrid>
 </MudPaper>
 
-<MudGrid Spacing="3">
-    <MudItem xs="6">
-        <!-- Donut Chart -->
-        <MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
-            <MudStack>
-                <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Распределение задач по статусам</MudText>
-                <MudChart ChartType="ChartType.Donut"
-                          Width="300px"
-                          Height="300px"
-                          InputData="@_statusData"
-                          InputLabels="@_statusLabels">
-                    <CustomGraphics>
-                        <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" font-size="18">По статусам</text>
-                        <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-size="28">@_statusData.Sum()</text>
-                    </CustomGraphics>
-                </MudChart>
-            </MudStack>
-        </MudPaper>
-    </MudItem>
+<MudPaper Class="pa-4 mb-4" Elevation="0" Width="100%">
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6">
+            <!-- Donut Chart -->
+            <MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
+                <MudStack>
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Распределение задач по статусам</MudText>
+                    <MudChart ChartType="ChartType.Donut"
+                              Width="100%"
+                              Height="300px"
+                              InputData="@_statusData"
+                              InputLabels="@_statusLabels">
+                        <CustomGraphics>
+                            <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" font-size="18">По статусам</text>
+                            <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-size="28">@_statusData.Sum()</text>
+                        </CustomGraphics>
+                    </MudChart>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
 
-    <MudItem xs="6">
-        <!-- Status Bar Chart -->
-        <MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
-            <MudStack>
-                <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Текущее распределение задач по статусам</MudText>
-                <MudChart ChartType="ChartType.StackedBar"
-                          ChartSeries="@_statusSeries"
-                          XAxisLabels="@_statusLabels"
-                          Width="100%"
-                          Height="300px" />
-            </MudStack>
-        </MudPaper>
-    </MudItem>
+        <MudItem xs="12" sm="6">
+            <!-- Status Bar Chart -->
+            <MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
+                <MudStack>
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Текущее распределение задач по статусам</MudText>
+                    <MudChart ChartType="ChartType.StackedBar"
+                              ChartSeries="@_statusSeries"
+                              XAxisLabels="@_statusLabels"
+                              Width="100%"
+                              Height="300px" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
 
-    <MudItem xs="6">
-        <!-- Daily Bar Chart -->
-        <MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
-            <MudStack>
-                <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Ежедневная статистика: создано, завершено, просрочено</MudText>
-                <MudChart ChartType="ChartType.StackedBar"
-                          ChartSeries="@_dailyBarSeries"
-                          XAxisLabels="@_dailyLabels"
-                          Width="100%"
-                          Height="350px" />
-            </MudStack>
-        </MudPaper>
-    </MudItem>
+        <MudItem xs="12" sm="6">
+            <!-- Daily Bar Chart -->
+            <MudPaper Class="pa-4 mb-4 mud-elevation-2 d-flex justify-center">
+                <MudStack>
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Ежедневная статистика: создано, завершено, просрочено</MudText>
+                    <MudChart ChartType="ChartType.StackedBar"
+                              ChartSeries="@_dailyBarSeries"
+                              XAxisLabels="@_dailyLabels"
+                              Width="100%"
+                              Height="350px" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
 
-    <MudItem xs="6">
-        <!-- Time Series Chart -->
-        <MudPaper Class="pa-4 mud-elevation-2 d-flex justify-center">
-            <MudStack>
-                <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Тренды по метрикам во времени</MudText>
-                <MudTimeSeriesChart ChartSeries="@_trendSeries"
-                                    Width="100%"
-                                    Height="350px"
-                                    TimeLabelFormat="M"
-                                    TimeLabelSpacing="TimeSpan.FromDays(1)"
-                                    TimeLabelSpacingRounding="true"
-                                    TimeLabelSpacingRoundingPadSeries="true"
-                                    AxisChartOptions="@_timeAxisOptions"
-                                    CanHideSeries="true"
-                                    DataMarkerTooltipTimeLabelFormat="yyyy-MM-dd"
-                                    ChartOptions="@timeSeriesChartOptions" />
-            </MudStack>
-        </MudPaper>
-    </MudItem>
+        <MudItem xs="12" sm="6">
+            <!-- Time Series Chart -->
+            <MudPaper Class="pa-4 mud-elevation-2 d-flex justify-center">
+                <MudStack>
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2 text-center">Тренды по метрикам во времени</MudText>
+                    <MudTimeSeriesChart ChartSeries="@_trendSeries"
+                                        Width="100%"
+                                        Height="350px"
+                                        TimeLabelFormat="M"
+                                        TimeLabelSpacing="TimeSpan.FromDays(1)"
+                                        TimeLabelSpacingRounding="true"
+                                        TimeLabelSpacingRoundingPadSeries="true"
+                                        AxisChartOptions="@_timeAxisOptions"
+                                        CanHideSeries="true"
+                                        DataMarkerTooltipTimeLabelFormat="yyyy-MM-dd"
+                                        ChartOptions="@timeSeriesChartOptions" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
 
 
 
-</MudGrid>
+    </MudGrid>
+</MudPaper>
 
 @code {
     private GlobalTaskStatisticsVm _global = new();

@@ -15,12 +15,6 @@
                        Color="Color.Primary"
                        OnClick='() => Nav.NavigateTo("/tasks/calendar")' />
         <MudText Typo="Typo.h5">@Date.ToLocalTime().ToString("D")</MudText>
-        <MudSpacer />
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   OnClick='() => Nav.NavigateTo($"/tasks/form/date/{Date:yyyy-MM-dd}")'>
-            Добавить задачу
-        </MudButton>
     </MudStack>
 
     <TaskTableComponent @ref="_taskTable"
@@ -30,6 +24,8 @@
                         OnComplete="CompleteTask"
                         OnReopen="ReopenTask"
                         HidePagination="true" />
+
+    <AddFabButton OnClick='() => Nav.NavigateTo($"/tasks/form/date/{Date:yyyy-MM-dd}")' />
 </MudPaper>
 
 @code {

@@ -1,19 +1,23 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.JSInterop;
 using MudBlazor;
 using Syncfusion.Blazor;
 using ToDo.Frontend.Common.Exceptions;
 using ToDo.Frontend.Models;
 using ToDo.Frontend.Services.TaskItems;
+using ToDo.Frontend.Shared.Components;
 
 namespace ToDo.Frontend.Pages.TaskItems
 {
     public class FormTaskViewModel : BaseComponent
     {
         [Inject] ISnackbar Snackbar { get; set; }
+        [Inject] IDialogService DialogService { get; set; }
         [Inject] NavigationManager Nav { get; set; }
         [Inject] ITaskItemsService TaskItemsService { get; set; }
+        [Inject] IJSRuntime JS { get; set; }
 
         [Parameter] public Guid? Id { get; set; }
         [Parameter] public DateTime? Date { get; set; }
@@ -138,9 +142,39 @@ namespace ToDo.Frontend.Pages.TaskItems
                 : null;
         }
 
-        protected void OnCancel(MouseEventArgs args)
+        protected async Task OnDelete()
         {
-            Nav.NavigateTo("tasks/");
+            var parameters = new DialogParameters<DialogComponent>
+        {
+            { x => x.ContentText, "Вы действительно хотите удалить эту задачу? Этот процесс невозможно отменить." },
+            { x => x.ButtonText, "Удалить" },
+            { x => x.Color, Color.Error }
+        };
+
+            var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+            var dialog = await DialogService.ShowAsync<DialogComponent>("Delete", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                try
+                {
+                    await TaskItemsService.DeleteAsync(Id.Value);
+                    Snackbar.Add("Задача удалена", Severity.Success);
+                    await JS.InvokeVoidAsync("history.back");
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Ошибка удаления: {ex.Message}", Severity.Error);
+                }
+            }
+        }
+
+        protected async Task OnCancel(MouseEventArgs args)
+        {
+            //Nav.NavigateTo("tasks/");
+            await JS.InvokeVoidAsync("history.back");
         }
 
 

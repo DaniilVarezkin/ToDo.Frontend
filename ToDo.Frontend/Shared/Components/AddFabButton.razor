@@ -1,0 +1,13 @@
+@using ToDo.Shared.Dto.TaskItems
+@using ToDo.Shared.Enums
+@using MudBlazor
+
+<MudFab Color="Color.Primary"
+        StartIcon="@Icons.Material.Filled.Add"
+        Size="Size.Large"
+        OnClick='OnClick'
+        Style="position: fixed; bottom: 32px; right: 32px; z-index: 1000;" />
+
+@code {
+    [Parameter] public EventCallback OnClick { get; set; }
+}

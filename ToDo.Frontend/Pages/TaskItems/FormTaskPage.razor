@@ -133,20 +133,28 @@
             <!-- Кнопки -->
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
+                    @if (Id.HasValue)
+                    {
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   OnClick="OnDelete">
+                            Удалить
+                        </MudButton>
+                        <MudSpacer />
+                    }
+
+                    <MudButton Variant="Variant.Outlined"
+                               OnClick='OnCancel'>
+                        Отмена
+                    </MudButton>
+
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                OnClick="@SubmitAsync">
                         @(Id.HasValue ? "Сохранить" : "Создать")
-                    </MudButton>
-                    <MudButton Variant="Variant.Outlined"
-                               OnClick='OnCancel'>
-                        Отмена
                     </MudButton>
                 </MudStack>
             </MudItem>
         </MudGrid>
     </MudForm>
 </MudPaper>
-@code {
-
-}
