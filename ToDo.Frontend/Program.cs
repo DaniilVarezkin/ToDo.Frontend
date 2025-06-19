@@ -44,6 +44,6 @@ builder.Services.AddScoped<IStatisticService, StatisticService>();
 
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddMudServices();
-
+ 
 
 await builder.Build().RunAsync();
