@@ -18,7 +18,12 @@
           OnRowClick="RowClickEvent"
           Loading="false"
           RowsPerPage="10"
-          Elevation="0" Bordered="false" OnRowMouseEnter="OnRowMouseEnter" OnRowMouseLeave="OnRowMouseLeave">
+          Elevation="0"
+          Bordered="false"
+          OnRowMouseEnter="OnRowMouseEnter"
+          OnRowMouseLeave="OnRowMouseLeave"
+          Breakpoint="Breakpoint.Sm">
+
     <HeaderContent>
         <MudTh>
             <MudStack Row="true" Style="width: 100%;">
@@ -34,38 +39,75 @@
         </MudTh>
         <MudTh Style="width:4rem;"></MudTh>
     </HeaderContent>
+    <ColGroup>
+        <col style="width: 80%" />
+        <col />
+        <col />
+
+    </ColGroup>
 
     <RowTemplate Context="task">
+        <!-- ПК-версия (табличная) -->
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudTd DataLabel="Задача">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Done"
+                                              OnCheck="() => OnComplete.InvokeAsync(task.Id)"
+                                              OnUndo="() => OnReopen.InvokeAsync(task.Id)" />
+                    <TaskTitleComponent Title="@task.Title"
+                                        SubTitle="@(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))"
+                                        IsComplete="task.Status == UserTaskStatus.Done" />
+                </MudStack>
+            </MudTd>
 
-        <MudTd DataLabel="Задача" >
-            <MudStack Row="true" AlignItems="AlignItems.Start" Style="vertical-align: top; padding-left: 5px;">
-                <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Done"
-                                          OnCheck="() => OnComplete.InvokeAsync(task.Id)"
-                                          OnUndo="() => OnReopen.InvokeAsync(task.Id)" />
-                <TaskTitleComponent Title="@task.Title"
-                                    SubTitle="@(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))" 
-                                    IsComplete="task.Status == UserTaskStatus.Done" />
+            <MudTd DataLabel="Приоритет">
+                <MudChip T="string"
+                         Color="@task.Priority.GetPriorityMudColor()"
+                         Size="Size.Small"
+                         Variant="Variant.Text">
+                    @task.Priority
+                </MudChip>
+            </MudTd>
 
-            </MudStack>
-        </MudTd>
-        <MudTd DataLabel="Приоритет">
-            <MudChip T="string"
-                     Color="@task.Priority.GetPriorityMudColor()"
-                     Size="Size.Small"
-                     Variant="Variant.Text">
-                @task.Priority
-            </MudChip>
-        </MudTd>
+            <MudTd>
+                @if (_currenHoverRowTaskId.HasValue && _currenHoverRowTaskId == task.Id)
+                {
+                    <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                   Color="Color.Default"
+                                   Size="Size.Small"
+                                   OnClick="() => OnDelete.InvokeAsync(task.Id)" />
+                }
+            </MudTd>
+        </MudHidden>
 
-        <MudTd >
-            @if (_currenHoverRowTaskId.HasValue && _currenHoverRowTaskId == task.Id)
-            {
-                <MudIconButton Icon="@Icons.Material.Outlined.Delete"
-                                Color="Color.Default"
-                                Size="Size.Small"
-                                OnClick="() => OnDelete.InvokeAsync(task.Id)"/>
-            }
-        </MudTd>
+        <!--Мобильная карточка -->
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudTd Class="p-0">
+                <MudPaper Class="pa-2" Elevation="1" Style="width: 100%;">
+                    <MudStack Spacing="2" Row="true" Justify="Justify.SpaceBetween">
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <CheckUndoButtonComponent IsCheck="task.Status == UserTaskStatus.Done"
+                                                      OnCheck="() => OnComplete.InvokeAsync(task.Id)"
+                                                      OnUndo="() => OnReopen.InvokeAsync(task.Id)" />
+                            <TaskTitleComponent Title="@task.Title"
+                                                SubTitle="@(task.IsAllDay ? "Весь день" : task.StartDate.LocalDateTime.ToString("HH:mm"))"
+                                                IsComplete="task.Status == UserTaskStatus.Done" />
+                        </MudStack>
+
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.caption">
+                                <MudChip T="string"
+                                         Color="@task.Priority.GetPriorityMudColor()"
+                                         Size="Size.Small"
+                                         Variant="Variant.Text">
+                                    @task.Priority
+                                </MudChip>
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            </MudTd>
+        </MudHidden>
     </RowTemplate>
 
     <PagerContent>
