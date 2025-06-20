@@ -1,0 +1,3 @@
+[submodule "ToDo.Shared"]
+	path = ToDo.Shared
+	url = https://github.com/DaniilVarezkin/ToDo.Shared
