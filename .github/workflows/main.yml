@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1) Клонируем репозиторий вместе с сабмодулями (Shared)
+      # 1) Клонируем репозиторий вместе с сабмодулями (ToDo.Shared)
       - name: Checkout repository (with submodules)
         uses: actions/checkout@v3
         with:
@@ -23,25 +23,21 @@ jobs:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      # 3) (опционально) Убедимся, что csproj-файлы подтянулись
-      - name: List all .csproj files
+      # 3) Восстанавливаем зависимости и публикуем проект по его пути
+      - name: Restore & Publish Frontend
         shell: pwsh
-        run: Get-ChildItem -Recurse -Filter '*.csproj'
-
-      # 4) Сборка и публикация Frontend
-      - name: Publish Frontend
-        shell: pwsh
-        working-directory: 'ToDo.Frontend/ToDo.Frontend'
         run: |
-          dotnet restore
-          dotnet publish -c Release --output release
+          # Убедитесь, что путь точно совпадает с тем, что вы видели в List all .csproj files
+          $proj = 'ToDo.Frontend/ToDo.Frontend/ToDo.Frontend.csproj'
+          dotnet restore $proj
+          dotnet publish  $proj -c Release --output ToDo.Frontend/ToDo.Frontend/release
 
-      # 5) (опционально) Проверяем содержимое папки release
+      # 4) (опционально) Инспекция результата
       - name: Inspect publish folder
         shell: pwsh
-        run: Get-ChildItem -Path ToDo.Frontend/ToDo.Frontend/release -Recurse
+        run: Get-ChildItem -Recurse -Path ToDo.Frontend/ToDo.Frontend/release
 
-      # 6) Деплойим на ветку gh-pages
+      # 5) Деплойим на gh-pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
