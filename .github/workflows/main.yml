@@ -10,44 +10,34 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1) Клонируем фронтенд в корень runner’а — тут появится .git
-      - name: Checkout Frontend
+      # 1) Клонируем весь репозиторий (Frontend + .git) в корень
+      - name: Checkout repository
         uses: actions/checkout@v3
-        # ← Никакого `path`!
 
-      # 2) Клонируем Shared в подпапку ToDo.Shared
+      # 2) Клонируем Shared-код в подпапку ToDo.Shared
       - name: Checkout Shared
         uses: actions/checkout@v3
         with:
           repository: DaniilVarezkin/ToDo.Shared
           path: ToDo.Shared
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main  # или та ветка, где есть проект Shared
+          ref: main
 
-      # 3) Устанавливаем .NET
-      - name: Setup .NET SDK
+      # 3) Устанавливаем .NET SDK
+      - name: Setup .NET 8 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      # 4) На всякий случай — убеждаемся, что оба проекта на месте
-      - name: List all .csproj
+      # 4) (опционально) показать, где лежат проекты
+      - name: List all .csproj files
         shell: pwsh
         run: |
-          Write-Host "→ Frontend csproj:"
+          Write-Host "→ Projects in repo:"
           Get-ChildItem -Path . -Filter '*.csproj' -Recurse
-          Write-Host "→ Shared csproj:"
-          Get-ChildItem -Path ToDo.Shared -Filter '*.csproj' -Recurse
 
-      # 5) Добавляем ссылку из Frontend на Shared (одной строкой!)
-      - name: Add ProjectReference
-        shell: pwsh
-        run: |
-          dotnet add "ToDo.Frontend/ToDo.Frontend/ToDo.Frontend.csproj" `
-            reference "ToDo.Shared/ToDo.Shared/ToDo.Shared.csproj"
-
-      # 6) Сборка и публикация
+      # 5) Сборка и публикация Frontend (ProjectReference уже есть в .csproj)
       - name: Publish Frontend
         shell: pwsh
         working-directory: 'ToDo.Frontend/ToDo.Frontend'
@@ -55,13 +45,12 @@ jobs:
           dotnet restore
           dotnet publish -c Release --output release
 
-      # 7) Инспекция папки release
+      # 6) (опционально) посмотреть, что получилось в release
       - name: Inspect publish folder
         shell: pwsh
-        run: |
-          Get-ChildItem -Path ToDo.Frontend/ToDo.Frontend/release -Recurse
+        run: Get-ChildItem -Path ToDo.Frontend/ToDo.Frontend/release -Recurse
 
-      # 8) Деплой на gh-pages — теперь в корне есть .git, action сможет сконфигурировать git
+      # 7) Деплойим на gh-pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
