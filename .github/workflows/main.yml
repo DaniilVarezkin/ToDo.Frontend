@@ -3,43 +3,72 @@ name: Deploy Blazor WASM to GitHub Pages (Windows)
 on:
   push:
     branches:
-      - master   # или main
+      - master   # или main, если у вас основная ветка main
 
 jobs:
   deploy:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
+      # 1) Клонируем ваш Frontend
+      - name: Checkout Frontend
         uses: actions/checkout@v3
+        with:
+          path: ToDo.Frontend
 
-      - name: Setup .NET SDK
+      # 2) Клонируем репо Shared
+      - name: Checkout Shared
+        uses: actions/checkout@v3
+        with:
+          repository: DaniilVarezkin/ToDo.Shared
+          path: ToDo.Shared
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: master     # или ветка, в которой Shared
+
+      # 3) Ставим .NET SDK
+      - name: Setup .NET 8 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      - name: Find all .csproj files (debug)
+      # 4) Убедимся, что оба проекта на месте
+      - name: List CSProj files
         shell: pwsh
         run: |
-          Write-Host "→ .csproj files in repo:"
-          Get-ChildItem -Path . -Filter '*.csproj' -Recurse | ForEach-Object FullName
+          Write-Host "→ Frontend projects:"
+          Get-ChildItem ToDo.Frontend -Filter '*.csproj' -Recurse
+          Write-Host "→ Shared projects:"
+          Get-ChildItem ToDo.Shared -Filter '*.csproj' -Recurse
 
+      # 5) На лету добавляем ссылку из Frontend на Shared
+      - name: Add ProjectReference
+        shell: pwsh
+        run: |
+          dotnet add ToDo.Frontend/ToDo.Frontend/ToDo.Frontend.csproj \
+            reference ../ToDo.Shared/ToDo.Shared/ToDo.Shared.csproj
+
+      # 6) Делаем restore + publish
       - name: Publish Frontend
         shell: pwsh
-        working-directory: 'ToDo.Frontend'
-        run: dotnet publish -c Release --output release --nologo
+        working-directory: ToDo.Frontend/ToDo.Frontend
+        run: |
+          dotnet restore
+          dotnet publish -c Release --output release --nologo
 
-      - name: Inspect publish folder (debug)
+      # 7) Проверяем, что в release лежит wwwroot или сразу index.html
+      - name: Inspect publish folder
         shell: pwsh
         run: |
-          Write-Host "→ release folder contents:"
-          Get-ChildItem -Path ToDo.Frontend\release -Recurse
+          Get-ChildItem -Path ToDo.Frontend/ToDo.Frontend/release -Recurse
 
+      # 8) Деплоим на gh-pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
-          # Скорректируйте этот путь после того, как увидите, где лежит ваш index.html
-          folder: ToDo.Frontend\release
+          # если после publish в release лежит index.html и _framework
+          folder: ToDo.Frontend/ToDo.Frontend/release
+          # если внутри release есть wwwroot, то:
+          # folder: ToDo.Frontend/ToDo.Frontend/release/wwwroot
