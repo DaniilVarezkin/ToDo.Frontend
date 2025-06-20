@@ -1,13 +1,13 @@
-name: Deploy Blazor WASM to GitHub Pages (Windows)
+name: Deploy Blazor WASM to GitHub Pages
 
 on:
   push:
     branches:
-      - master   # или main
+      - master   # или main, если у вас основная ветка main
 
 jobs:
   deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       # 1) Клонируем репозиторий вместе с сабмодулями (ToDo.Shared)
@@ -16,29 +16,31 @@ jobs:
         with:
           submodules: recursive
 
-      # 2) Устанавливаем .NET SDK
+      # 2) Устанавливаем .NET 8 SDK
       - name: Setup .NET 8 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      # 3) Восстанавливаем и публикуем проект по явному пути
+      # 3) (опционально) Убедимся, что csproj-файлы на месте
+      - name: List all .csproj files
+        run: find . -type f -name '*.csproj'
+
+      # 4) Restore & Publish Frontend
       - name: Restore & Publish Frontend
-        shell: pwsh
         run: |
-          $proj = 'ToDo.Frontend/ToDo.Frontend.csproj'
-          Write-Host "Restoring $proj"
-          dotnet restore $proj
-          Write-Host "Publishing $proj"
-          dotnet publish $proj -c Release --output ToDo.Frontend/release
+          proj="ToDo.Frontend/ToDo.Frontend.csproj"
+          echo "Restoring $proj"
+          dotnet restore "$proj"
+          echo "Publishing $proj"
+          dotnet publish "$proj" -c Release -o "ToDo.Frontend/release"
 
-      # 4) Инспекция (опционально)
+      # 5) (опционально) Проверяем содержимое папки release
       - name: Inspect publish folder
-        shell: pwsh
-        run: Get-ChildItem -Recurse -Path ToDo.Frontend/release
+        run: find ToDo.Frontend/release -type f
 
-      # 5) Деплой на gh-pages
+      # 6) Деплойим на ветку gh-pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
