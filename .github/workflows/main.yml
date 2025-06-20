@@ -45,8 +45,7 @@ jobs:
       - name: Add ProjectReference
         shell: pwsh
         run: |
-          dotnet add ToDo.Frontend/ToDo.Frontend/ToDo.Frontend.csproj \
-            reference ../ToDo.Shared/ToDo.Shared/ToDo.Shared.csproj
+          dotnet add "ToDo.Frontend\ToDo.Frontend\ToDo.Frontend.csproj" reference "ToDo.Shared\ToDo.Shared\ToDo.Shared.csproj"
 
       # 6) Делаем restore + publish
       - name: Publish Frontend
