@@ -23,25 +23,26 @@ jobs:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      # 3) Восстанавливаем зависимости и публикуем проект по его пути
+      # 3) Восстанавливаем и публикуем проект по явному пути
       - name: Restore & Publish Frontend
         shell: pwsh
         run: |
-          # Убедитесь, что путь точно совпадает с тем, что вы видели в List all .csproj files
-          $proj = 'ToDo.Frontend/ToDo.Frontend/ToDo.Frontend.csproj'
+          $proj = 'ToDo.Frontend/ToDo.Frontend.csproj'
+          Write-Host "Restoring $proj"
           dotnet restore $proj
-          dotnet publish  $proj -c Release --output ToDo.Frontend/ToDo.Frontend/release
+          Write-Host "Publishing $proj"
+          dotnet publish $proj -c Release --output ToDo.Frontend/release
 
-      # 4) (опционально) Инспекция результата
+      # 4) Инспекция (опционально)
       - name: Inspect publish folder
         shell: pwsh
-        run: Get-ChildItem -Recurse -Path ToDo.Frontend/ToDo.Frontend/release
+        run: Get-ChildItem -Recurse -Path ToDo.Frontend/release
 
-      # 5) Деплойим на gh-pages
+      # 5) Деплой на gh-pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
-          folder: ToDo.Frontend/ToDo.Frontend/release
+          folder: ToDo.Frontend/release
           clean: true
