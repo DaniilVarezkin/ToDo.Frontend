@@ -3,41 +3,32 @@ name: Deploy Blazor WASM to GitHub Pages (Windows)
 on:
   push:
     branches:
-      - master   # или main
+      - master   # или main, если у вас основная ветка main
 
 jobs:
   deploy:
     runs-on: windows-latest
 
     steps:
-      # 1) Клонируем весь репозиторий (Frontend + .git) в корень
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # 2) Клонируем Shared-код в подпапку ToDo.Shared
-      - name: Checkout Shared
+      # 1) Checkout фронтенда вместе с сабмодулями (ToDo.Shared)
+      - name: Checkout repository (with submodules)
         uses: actions/checkout@v3
         with:
-          repository: DaniilVarezkin/ToDo.Shared
-          path: ToDo.Shared
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main
+          submodules: recursive
 
-      # 3) Устанавливаем .NET SDK
+      # 2) Устанавливаем .NET 8 SDK
       - name: Setup .NET 8 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      # 4) (опционально) показать, где лежат проекты
+      # 3) (опционально) Проверяем, что оба проекта на месте
       - name: List all .csproj files
         shell: pwsh
-        run: |
-          Write-Host "→ Projects in repo:"
-          Get-ChildItem -Path . -Filter '*.csproj' -Recurse
+        run: Get-ChildItem -Recurse -Filter '*.csproj'
 
-      # 5) Сборка и публикация Frontend (ProjectReference уже есть в .csproj)
+      # 4) Сборка и публикация Frontend
       - name: Publish Frontend
         shell: pwsh
         working-directory: 'ToDo.Frontend/ToDo.Frontend'
@@ -45,12 +36,12 @@ jobs:
           dotnet restore
           dotnet publish -c Release --output release
 
-      # 6) (опционально) посмотреть, что получилось в release
+      # 5) (опционально) Убеждаемся, что в release лежат index.html и _framework
       - name: Inspect publish folder
         shell: pwsh
         run: Get-ChildItem -Path ToDo.Frontend/ToDo.Frontend/release -Recurse
 
-      # 7) Деплойим на gh-pages
+      # 6) Деплой на gh-pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
