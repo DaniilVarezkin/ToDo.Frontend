@@ -10,51 +10,39 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1) Клонируем весь репозиторий (Frontend + .git) в корень
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # 2) Клонируем Shared-код в подпапку ToDo.Shared
-      - name: Checkout Shared
+      # 1) Клонируем репозиторий вместе с сабмодулями (ToDo.Shared)
+      - name: Checkout repository (with submodules)
         uses: actions/checkout@v3
         with:
-          repository: DaniilVarezkin/ToDo.Shared
-          path: ToDo.Shared
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main
+          submodules: recursive
 
-      # 3) Устанавливаем .NET SDK
+      # 2) Устанавливаем .NET SDK
       - name: Setup .NET 8 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      # 4) (опционально) показать, где лежат проекты
-      - name: List all .csproj files
+      # 3) Восстанавливаем и публикуем проект по явному пути
+      - name: Restore & Publish Frontend
         shell: pwsh
         run: |
-          Write-Host "→ Projects in repo:"
-          Get-ChildItem -Path . -Filter '*.csproj' -Recurse
+          $proj = 'ToDo.Frontend/ToDo.Frontend.csproj'
+          Write-Host "Restoring $proj"
+          dotnet restore $proj
+          Write-Host "Publishing $proj"
+          dotnet publish $proj -c Release --output ToDo.Frontend/release
 
-      # 5) Сборка и публикация Frontend (ProjectReference уже есть в .csproj)
-      - name: Publish Frontend
-        shell: pwsh
-        working-directory: 'ToDo.Frontend/ToDo.Frontend'
-        run: |
-          dotnet restore
-          dotnet publish -c Release --output release
-
-      # 6) (опционально) посмотреть, что получилось в release
+      # 4) Инспекция (опционально)
       - name: Inspect publish folder
         shell: pwsh
-        run: Get-ChildItem -Path ToDo.Frontend/ToDo.Frontend/release -Recurse
+        run: Get-ChildItem -Recurse -Path ToDo.Frontend/release
 
-      # 7) Деплойим на gh-pages
+      # 5) Деплой на gh-pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
-          folder: ToDo.Frontend/ToDo.Frontend/release
+          folder: ToDo.Frontend/release
           clean: true
