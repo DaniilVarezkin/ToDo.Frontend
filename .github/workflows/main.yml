@@ -10,20 +10,20 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1) Checkout репозитория вместе с сабмодулями (ToDo.Shared)
+      # 1) Клонируем репозиторий вместе с сабмодулями (Shared)
       - name: Checkout repository (with submodules)
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      # 2) Устанавливаем .NET 8 SDK
+      # 2) Устанавливаем .NET SDK
       - name: Setup .NET 8 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
           include-prerelease: true
 
-      # 3) (опционально) Убедимся, что csproj-файлы на месте
+      # 3) (опционально) Убедимся, что csproj-файлы подтянулись
       - name: List all .csproj files
         shell: pwsh
         run: Get-ChildItem -Recurse -Filter '*.csproj'
@@ -31,21 +31,21 @@ jobs:
       # 4) Сборка и публикация Frontend
       - name: Publish Frontend
         shell: pwsh
-        working-directory: 'ToDo.Frontend'
+        working-directory: 'ToDo.Frontend/ToDo.Frontend'
         run: |
           dotnet restore
           dotnet publish -c Release --output release
 
-      # 5) (опционально) Проверяем, что в release лежат index.html и _framework
+      # 5) (опционально) Проверяем содержимое папки release
       - name: Inspect publish folder
         shell: pwsh
-        run: Get-ChildItem -Path ToDo.Frontend/release -Recurse
+        run: Get-ChildItem -Path ToDo.Frontend/ToDo.Frontend/release -Recurse
 
-      # 6) Деплой на gh-pages
+      # 6) Деплойим на ветку gh-pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
-          folder: ToDo.Frontend/release
+          folder: ToDo.Frontend/ToDo.Frontend/release
           clean: true
